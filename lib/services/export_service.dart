@@ -6,6 +6,7 @@ import 'package:flutter/painting.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:permission_handler/permission_handler.dart';
 import '../models/canvas_state.dart';
 import '../models/canvas_element.dart';
 
@@ -14,27 +15,57 @@ class ExportService {
   static const String baseUrl = 'https://your-backend-api.com'; // Replace with your API URL
   final Dio _dio = Dio();
 
+  /// Check and request storage permission
+  Future<bool> _checkStoragePermission() async {
+    if (Platform.isAndroid) {
+      final status = await Permission.storage.status;
+      if (!status.isGranted) {
+        final result = await Permission.storage.request();
+        return result.isGranted;
+      }
+      return true;
+    }
+    return true; // iOS doesn't require storage permission for app directories
+  }
+
+  /// Get the appropriate directory for saving files
+  Future<Directory> _getSaveDirectory() async {
+    if (Platform.isAndroid) {
+      // Try to get external storage first (Downloads folder)
+      try {
+        if (await _checkStoragePermission()) {
+          return Directory('/storage/emulated/0/Download');
+        } else {
+          throw Exception("Storage permission denied");
+        }
+      } catch (e) {
+        // Fallback to application documents directory
+        return await getApplicationDocumentsDirectory();
+      }
+    } else {
+      // For iOS, use documents directory
+      return await getApplicationDocumentsDirectory();
+    }
+  }
+
   /// Export canvas as PNG image
   Future<bool> exportAsPNG(CanvasState canvasState) async {
     try {
-      // In a real implementation, you would:
-      // 1. Create a RepaintBoundary around your canvas
-      // 2. Convert it to an image using RenderRepaintBoundary.toImage()
-      // 3. Convert the image to bytes using image.toByteData()
-      // 4. Save the bytes to a file
+      // Get the save directory
+      final directory = await _getSaveDirectory();
       
-      // For now, we'll simulate the export
-      await Future.delayed(const Duration(seconds: 2));
+      // Create the directory if it doesn't exist
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
       
-      // Create a mock image data
-      final mockImageData = _createMockImageData(canvasState);
-      
-      // Get the downloads directory
-      final directory = await getApplicationDocumentsDirectory();
       final fileName = 'id_card_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File('${directory.path}/$fileName');
       
-      // Write mock data to file
+      // Create mock image data (replace with actual canvas rendering)
+      final mockImageData = _createMockImageData(canvasState);
+      
+      // Write data to file
       await file.writeAsBytes(mockImageData);
       
       print('PNG exported to: ${file.path}');
@@ -48,6 +79,14 @@ class ExportService {
   /// Export canvas as PDF document
   Future<bool> exportAsPDF(CanvasState canvasState) async {
     try {
+      // Get the save directory
+      final directory = await _getSaveDirectory();
+      
+      // Create the directory if it doesn't exist
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+      
       final pdf = pw.Document();
 
       // Add a page with the canvas content
@@ -63,8 +102,6 @@ class ExportService {
         ),
       );
 
-      // Get the downloads directory
-      final directory = await getApplicationDocumentsDirectory();
       final fileName = 'id_card_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final file = File('${directory.path}/$fileName');
 
@@ -78,6 +115,8 @@ class ExportService {
       return false;
     }
   }
+
+  // ... (rest of your methods remain the same)
 
   /// Send design to backend API
   Future<bool> sendToBackend(CanvasState canvasState) async {

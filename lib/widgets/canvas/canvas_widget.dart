@@ -201,7 +201,10 @@ class CanvasToolbar extends ConsumerWidget {
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
       ),
-      child: Row(
+      child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: IntrinsicWidth( // ✅ fixes "not laid out" error
+    child: Row(
         children: [
           // Undo/Redo buttons
           IconButton(
@@ -283,7 +286,7 @@ class CanvasToolbar extends ConsumerWidget {
             tooltip: 'Snap to Grid',
           ),
         ],
-      ),
+      ),),),
     );
   }
 }

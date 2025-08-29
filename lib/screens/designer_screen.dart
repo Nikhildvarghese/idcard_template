@@ -12,31 +12,31 @@ class DesignerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+       final isWideScreen = MediaQuery.of(context).size.width >= 1200; // wider breakpoint
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(context, ref),
+      // 👇 left drawer for ToolsPanel
+      drawer: isWideScreen ? null : const ToolsPanel(),
+      // 👇 right drawer for PropertiesPanel
+      endDrawer: isWideScreen ? null : const PropertiesPanel(),
       body: Row(
         children: [
-          // Left tools panel
-          const ToolsPanel(),
-          
+          // 👇 Show ToolsPanel permanently only on wide screens
+          if (isWideScreen) const ToolsPanel(),
+
           // Center canvas area
           Expanded(
             child: Column(
               children: [
-                // Canvas toolbar
                 const CanvasToolbar(),
-                
-                // Canvas container
-                const Expanded(
-                  child: CanvasContainer(),
-                ),
+                const Expanded(child: CanvasContainer()),
               ],
             ),
           ),
-          
-          // Right properties panel
-          const PropertiesPanel(),
+
+          // 👇 Show PropertiesPanel permanently only on wide screens
+          if (isWideScreen) const PropertiesPanel(),
         ],
       ),
     );
@@ -51,8 +51,26 @@ class DesignerScreen extends ConsumerWidget {
       backgroundColor: Colors.white,
       elevation: 1,
       centerTitle: false,
+      leading: Builder(
+        builder: (context) {
+          return IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          );
+        },
+      ),
       actions: [
-        // File operations
+        // 👇 Button to open right-side PropertiesPanel drawer
+        Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.tune), // or settings icon
+              tooltip: "Open Properties",
+              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            );
+          },
+        ),
+
         PopupMenuButton<String>(
           icon: const Icon(Icons.more_vert),
           tooltip: 'More options',
@@ -109,7 +127,6 @@ class DesignerScreen extends ConsumerWidget {
             ),
           ],
         ),
-        
         const SizedBox(width: 16),
       ],
     );
@@ -346,89 +363,105 @@ class WelcomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // App logo/icon
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.badge,
-                size: 60,
-                color: Colors.white,
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // App title
-            const Text(
-              'ID Card Designer',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // App description
-            const Text(
-              'Create professional ID cards with ease.\nDesign, customize, and export your cards.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-                height: 1.5,
-              ),
-            ),
-            
-            const SizedBox(height: 48),
-            
-            // Quick start options
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const DesignerScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Start Designing'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 16),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // App logo/icon
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.badge,
+                          size: 60,
+                          color: Colors.white,
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // App title
+                      const Text(
+                        'ID Card Designer',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // App description
+                      const Text(
+                        'Create professional ID cards with ease.\nDesign, customize, and export your cards.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey,
+                          height: 1.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 48),
+
+                      // Quick start options
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 16,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const DesignerScreen()),
+                              );
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Start Designing'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              textStyle: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              // Show templates dialog
+                              _showTemplatesDialog(context);
+                            },
+                            icon: const Icon(Icons.dashboard),
+                            label: const Text('Browse Templates'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 16),
+                              textStyle: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                
-                const SizedBox(width: 16),
-                
-                OutlinedButton.icon(
-                  onPressed: () {
-                    // Show templates dialog
-                    _showTemplatesDialog(context);
-                  },
-                  icon: const Icon(Icons.dashboard),
-                  label: const Text('Browse Templates'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -481,3 +514,4 @@ class WelcomeScreen extends ConsumerWidget {
     );
   }
 }
+

@@ -319,6 +319,130 @@ class ShapePainter extends CustomPainter {
           canvas.drawPath(path, strokePaint);
         }
         break;
+        case ShapeType.diamond:
+  final path = Path()
+    ..moveTo(size.width / 2, 0) // top
+    ..lineTo(size.width, size.height / 2) // right
+    ..lineTo(size.width / 2, size.height) // bottom
+    ..lineTo(0, size.height / 2) // left
+    ..close();
+  canvas.drawPath(path, paint);
+  break;
+
+  case ShapeType.heart:
+  final path = Path();
+  path.moveTo(size.width / 2, size.height * 0.75);
+  path.cubicTo(
+    size.width * 1.1, size.height * 0.35,
+    size.width * 0.7, size.height * -0.25,
+    size.width / 2, size.height * 0.25,
+  );
+  path.cubicTo(
+    size.width * 0.3, size.height * -0.25,
+    size.width * -0.1, size.height * 0.35,
+    size.width / 2, size.height * 0.75,
+  );
+  canvas.drawPath(path, paint);
+  break;
+   case ShapeType.hexagon: // 👈 NEW CASE
+    final path = _createPolygonPath(size, 6);
+    canvas.drawPath(path, paint);
+    if (element.strokeWidth > 0) {
+      canvas.drawPath(path, strokePaint);
+    }
+    break;
+    case ShapeType.pentagon:
+  final path = _createPolygonPath(size, 5);
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.octagon:
+  final path = _createPolygonPath(size, 8);
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.parallelogram:
+  final path = Path()
+    ..moveTo(size.width * 0.25, 0)
+    ..lineTo(size.width, 0)
+    ..lineTo(size.width * 0.75, size.height)
+    ..lineTo(0, size.height)
+    ..close();
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.trapezoid:
+  final path = Path()
+    ..moveTo(size.width * 0.2, 0)
+    ..lineTo(size.width * 0.8, 0)
+    ..lineTo(size.width, size.height)
+    ..lineTo(0, size.height)
+    ..close();
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.arrow:
+  final path = Path()
+    ..moveTo(0, size.height * 0.4)
+    ..lineTo(size.width * 0.6, size.height * 0.4)
+    ..lineTo(size.width * 0.6, 0)
+    ..lineTo(size.width, size.height / 2)
+    ..lineTo(size.width * 0.6, size.height)
+    ..lineTo(size.width * 0.6, size.height * 0.6)
+    ..lineTo(0, size.height * 0.6)
+    ..close();
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.cross:
+  final path = Path()
+    ..addRect(Rect.fromLTWH(size.width * 0.4, 0, size.width * 0.2, size.height))
+    ..addRect(Rect.fromLTWH(0, size.height * 0.4, size.width, size.height * 0.2));
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.moon:
+  final path = Path()
+    ..addOval(Rect.fromLTWH(0, 0, size.width, size.height));
+  final cutout = Path()
+    ..addOval(Rect.fromLTWH(size.width * 0.3, 0, size.width, size.height));
+  path.addPath(cutout, Offset.zero);
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
+case ShapeType.cloud:
+  final path = Path()
+    ..addOval(Rect.fromCircle(center: Offset(size.width * 0.3, size.height * 0.5), radius: size.width * 0.25))
+    ..addOval(Rect.fromCircle(center: Offset(size.width * 0.55, size.height * 0.35), radius: size.width * 0.3))
+    ..addOval(Rect.fromCircle(center: Offset(size.width * 0.75, size.height * 0.55), radius: size.width * 0.25))
+    ..addRect(Rect.fromLTWH(size.width * 0.25, size.height * 0.5, size.width * 0.55, size.height * 0.25));
+  canvas.drawPath(path, paint);
+  if (element.strokeWidth > 0) {
+    canvas.drawPath(path, strokePaint);
+  }
+  break;
+
     }
   }
 

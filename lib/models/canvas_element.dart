@@ -312,7 +312,7 @@ enum ShapeType {
   circle,
   triangle,
   star,
-  polygon,
+  polygon, diamond, heart,hexagon,cloud,moon,cross,arrow,trapezoid,parallelogram,octagon,pentagon
 }
 
 /// Shape element for canvas

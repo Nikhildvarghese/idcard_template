@@ -58,6 +58,19 @@ class ToolsPanel extends ConsumerWidget {
                   _ToolItem('Triangle', Icons.change_history, () => _addTriangle(ref)),
                   _ToolItem('Star', Icons.star_outline, () => _addStar(ref)),
                   _ToolItem('Line', Icons.horizontal_rule, () => _addLine(ref)),
+                  _ToolItem('Diamond', Icons.diamond_outlined, () => _addDiamond(ref)),
+                  _ToolItem('Hexagon', Icons.hexagon_outlined, () => _addHexagon(ref)),
+                  _ToolItem('Heart', Icons.favorite_border, () => _addHeart(ref)),
+                  _ToolItem('Pentagon', Icons.pentagon_outlined, () => _addPentagon(ref)),
+                  _ToolItem('Octagon', Icons.on_device_training_outlined, () => _addOctagon(ref)),
+
+                  _ToolItem('Parallelogram', Icons.square_outlined, () => _addParallelogram(ref)),
+                  _ToolItem('Trapezoid', Icons.crop_landscape_outlined, () => _addTrapezoid(ref)),
+                  _ToolItem('Arrow', Icons.arrow_right_alt_outlined, () => _addArrow(ref)),
+                  _ToolItem('Cross', Icons.close, () => _addCross(ref)),
+                  _ToolItem('Moon', Icons.dark_mode_outlined, () => _addMoon(ref)),
+                  _ToolItem('Cloud', Icons.cloud_outlined, () => _addCloud(ref)),
+
                 ]),
                 
                 const SizedBox(height: 16),
@@ -205,6 +218,115 @@ class ToolsPanel extends ConsumerWidget {
       strokeWidth: 2,
     );
   }
+  void _addDiamond(WidgetRef ref) {
+  final canvasNotifier = ref.read(canvasProvider.notifier);
+  canvasNotifier.addShapeElement(
+    shapeType: ShapeType.diamond,
+    position: const Offset(150, 150),
+    size: const Size(80, 80),
+    fillColor: Colors.purple,
+  );
+}
+
+void _addHexagon(WidgetRef ref) {
+  final canvasNotifier = ref.read(canvasProvider.notifier);
+  canvasNotifier.addShapeElement(
+    shapeType: ShapeType.hexagon,
+    position: const Offset(150, 150),
+    size: const Size(100, 100),
+    fillColor: Colors.teal,
+  );
+}
+
+void _addHeart(WidgetRef ref) {
+  final canvasNotifier = ref.read(canvasProvider.notifier);
+  canvasNotifier.addShapeElement(
+    shapeType: ShapeType.heart,
+    position: const Offset(150, 150),
+    size: const Size(90, 90),
+    fillColor: Colors.red,
+  );
+}
+  void _addPentagon(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.pentagon,
+      position: const Offset(150, 150),
+      size: const Size(100, 100),
+      fillColor: Colors.indigo,
+    );
+  }
+
+  void _addOctagon(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.octagon,
+      position: const Offset(150, 150),
+      size: const Size(100, 100),
+      fillColor: Colors.deepOrange,
+    );
+  }
+
+  void _addParallelogram(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.parallelogram,
+      position: const Offset(150, 150),
+      size: const Size(120, 80),
+      fillColor: Colors.cyan,
+    );
+  }
+
+  void _addTrapezoid(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.trapezoid,
+      position: const Offset(150, 150),
+      size: const Size(120, 80),
+      fillColor: Colors.brown,
+    );
+  }
+
+  void _addArrow(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.arrow,
+      position: const Offset(150, 150),
+      size: const Size(120, 80),
+      fillColor: Colors.blueGrey,
+    );
+  }
+
+  void _addCross(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.cross,
+      position: const Offset(150, 150),
+      size: const Size(100, 100),
+      fillColor: Colors.pink,
+    );
+  }
+
+  void _addMoon(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.moon,
+      position: const Offset(150, 150),
+      size: const Size(100, 100),
+      fillColor: Colors.amber,
+    );
+  }
+
+  void _addCloud(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.cloud,
+      position: const Offset(150, 150),
+      size: const Size(140, 100),
+      fillColor: Colors.lightBlue,
+    );
+  }
+
 
   void _uploadImage(WidgetRef ref) async {
     final picker = ImagePicker();
