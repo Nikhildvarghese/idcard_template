@@ -8,14 +8,24 @@ import '../models/canvas_element.dart';
 
 /// Canvas state notifier for managing canvas operations
 class CanvasNotifier extends StateNotifier<CanvasState> {
-  CanvasNotifier() : super(CanvasState.empty());
+  CanvasNotifier() : super(CanvasState.empty()) {
+    _saveToHistory(); // Save initial state
+  }
 
   // Maintain separate element lists for front/back without changing the model schema
   List<CanvasElement> _frontElements = [];
   List<CanvasElement> _backElements = [];
   bool _isFrontSide = true; // true = front, false = back
 
+  // History management for undo/redo
+  List<CanvasState> _history = [];
+  int _historyIndex = -1;
+  static const int _maxHistorySize = 50;
+  bool _isUndoRedoOperation = false;
+
   bool get isFrontSide => _isFrontSide;
+  bool get canUndo => _historyIndex > 0;
+  bool get canRedo => _historyIndex < _history.length - 1;
 
   /// Add a new element to the canvas
   void addElement(CanvasElement element) {
@@ -34,6 +44,7 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
   /// Update existing element
   void updateElement(CanvasElement updatedElement) {
     state = state.updateElement(updatedElement);
+    _saveToHistory();
   }
 
   /// Select element and automatically bring to front
@@ -230,21 +241,55 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
 
   /// Save current state to history for undo/redo
   void _saveToHistory() {
-    // Implement undo/redo history management
-    // For now, we'll keep it simple and not implement full history
-    // In a production app, you'd want to manage a history stack
+    // Don't save to history if we're in the middle of undo/redo operation
+    if (_isUndoRedoOperation) {
+      return;
+    }
+
+    // Remove any history after current index (when new action is performed after undo)
+    if (_historyIndex < _history.length - 1) {
+      _history = _history.sublist(0, _historyIndex + 1);
+    }
+
+    // Add current state to history
+    _history.add(state);
+    _historyIndex = _history.length - 1;
+
+    // Keep history size manageable
+    if (_history.length > _maxHistorySize) {
+      _history.removeAt(0);
+      _historyIndex = _history.length - 1;
+    }
   }
 
   /// Undo last action
   void undo() {
-    // Implement undo functionality
-    // This would restore the previous state from history
+    if (!canUndo) return;
+
+    _isUndoRedoOperation = true;
+    _historyIndex--;
+    state = _history[_historyIndex];
+    _isUndoRedoOperation = false;
+    
+    // Provide haptic feedback on mobile
+    if (_isMobile) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   /// Redo last undone action
   void redo() {
-    // Implement redo functionality
-    // This would restore the next state from history
+    if (!canRedo) return;
+
+    _isUndoRedoOperation = true;
+    _historyIndex++;
+    state = _history[_historyIndex];
+    _isUndoRedoOperation = false;
+    
+    // Provide haptic feedback on mobile
+    if (_isMobile) {
+      HapticFeedback.lightImpact();
+    }
   }
 
   /// Clear entire canvas
@@ -338,6 +383,7 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
   /// Stop editing text element
   void stopTextEditing() {
     state = state.copyWith(editingTextElementId: null);
+    _saveToHistory();
   }
 
   /// Update text content of editing element
@@ -459,4 +505,20 @@ final selectedElementProvider = Provider<CanvasElement?>((ref) {
 final sortedElementsProvider = Provider<List<CanvasElement>>((ref) {
   final canvas = ref.watch(canvasProvider);
   return canvas.sortedElements;
+});
+
+/// Provider for undo availability
+final canUndoProvider = Provider<bool>((ref) {
+  // Watch the state to trigger rebuilds when it changes
+  ref.watch(canvasProvider);
+  final canvasNotifier = ref.read(canvasProvider.notifier);
+  return canvasNotifier.canUndo;
+});
+
+/// Provider for redo availability
+final canRedoProvider = Provider<bool>((ref) {
+  // Watch the state to trigger rebuilds when it changes
+  ref.watch(canvasProvider);
+  final canvasNotifier = ref.read(canvasProvider.notifier);
+  return canvasNotifier.canRedo;
 });
