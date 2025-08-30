@@ -193,6 +193,7 @@ class CanvasToolbar extends ConsumerWidget {
     final canvasState = ref.watch(canvasProvider);
     final canvasNotifier = ref.read(canvasProvider.notifier);
     final selectedElement = ref.watch(selectedElementProvider);
+    final isFrontSide = canvasNotifier.isFrontSide;
 
     return Container(
       height: 50,
@@ -285,8 +286,74 @@ class CanvasToolbar extends ConsumerWidget {
             onPressed: () => canvasNotifier.toggleSnapToGrid(),
             tooltip: 'Snap to Grid',
           ),
+          
+          const VerticalDivider(),
+          
+          // ID Card Front/Back toggle
+          Container(
+            height: 32,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.grey.shade100,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildSideButton(
+                  label: 'Front',
+                  icon: Icons.credit_card,
+                  isSelected: isFrontSide,
+                  onPressed: () => canvasNotifier.goToFrontSide(),
+                ),
+                _buildSideButton(
+                  label: 'Back',
+                  icon: Icons.flip,
+                  isSelected: !isFrontSide,
+                  onPressed: () => canvasNotifier.goToBackSide(),
+                ),
+              ],
+            ),
+          ),
         ],
       ),),),
+    );
+  }
+  
+  /// Build a side toggle button (Front/Back)
+  Widget _buildSideButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? Colors.blue : Colors.transparent,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

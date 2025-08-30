@@ -180,12 +180,16 @@ class CanvasState extends Equatable {
     final newElements = elements.map((e) {
       if (selectedIds.contains(e.id) && !e.isLocked) {
         final newPosition = e.position + delta;
+        
+        // Apply snap-to-grid if enabled
+        final finalPosition = isSnapToGrid ? _snapToGrid(newPosition) : newPosition;
+        
         // Ensure element stays within canvas bounds
         final maxX = math.max(0.0, canvasSize.width - e.size.width);
         final maxY = math.max(0.0, canvasSize.height - e.size.height);
         final clampedPosition = Offset(
-          newPosition.dx.clamp(0.0, maxX),
-          newPosition.dy.clamp(0.0, maxY),
+          finalPosition.dx.clamp(0.0, maxX),
+          finalPosition.dy.clamp(0.0, maxY),
         );
         return e.copyWith(position: clampedPosition);
       }
@@ -193,6 +197,13 @@ class CanvasState extends Equatable {
     }).toList();
 
     return copyWith(elements: newElements);
+  }
+  
+  /// Snap position to grid
+  Offset _snapToGrid(Offset position) {
+    final snappedX = (position.dx / gridSize).round() * gridSize;
+    final snappedY = (position.dy / gridSize).round() * gridSize;
+    return Offset(snappedX, snappedY);
   }
 
   /// Resize selected element

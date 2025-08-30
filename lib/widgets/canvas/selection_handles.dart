@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import '../../models/canvas_element.dart';
+import 'mobile_resize_helper.dart';
 
 /// Widget that displays selection handles around selected elements
 class SelectionHandles extends StatefulWidget {
@@ -21,11 +24,20 @@ class SelectionHandles extends StatefulWidget {
 }
 
 class _SelectionHandlesState extends State<SelectionHandles> {
-  static const double handleSize = 8.0;
-  static const double rotationHandleDistance = 20.0;
+  // Mobile-optimized handle sizes
+  static const double handleVisualSize = 10.0; // Visual size
+  static const double handleTouchSize = 32.0;   // Touch area size (much larger)
+  static const double rotationHandleDistance = 30.0;
   
   late Size currentSize;
   late double currentRotation;
+  
+  // Track which handle is being touched for feedback
+  _HandleType? _activeTouchHandle;
+  bool _isResizing = false;
+  
+  // Platform-specific settings
+  bool get _isMobile => !kIsWeb && (Theme.of(context).platform == TargetPlatform.android || Theme.of(context).platform == TargetPlatform.iOS);
 
   @override
   void initState() {
@@ -47,15 +59,35 @@ class _SelectionHandlesState extends State<SelectionHandles> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Selection border
-        Container(
-          width: currentSize.width,
-          height: currentSize.height,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: Colors.blue,
-              width: 1.5,
+        // Selection border with double-tap for mobile resize helper
+        GestureDetector(
+          onDoubleTap: _isMobile ? () => _showMobileResizeHelper(context) : null,
+          child: Container(
+            width: currentSize.width,
+            height: currentSize.height,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.blue,
+                width: 1.5,
+              ),
             ),
+            // Add a subtle hint for mobile users
+            child: _isMobile && !_isResizing ? Positioned(
+              right: 4,
+              top: 4,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.8),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: const Icon(
+                  Icons.touch_app,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+            ) : null,
           ),
         ),
 
@@ -80,22 +112,44 @@ class _SelectionHandlesState extends State<SelectionHandles> {
   }
 
   Widget _buildCornerHandle(Alignment alignment, _HandleType handleType) {
+    final handleRect = _getHandleRect(alignment);
+    final isActive = _activeTouchHandle == handleType;
+    
     return Positioned.fromRect(
-      rect: _getHandleRect(alignment),
+      rect: _getTouchRect(alignment), // Use larger touch area
       child: GestureDetector(
+        onPanStart: (details) => _onPanStart(handleType),
         onPanUpdate: (details) => _handleResize(details.delta, handleType),
-        onPanEnd: (details) => _onResizeEnd(),
+        onPanEnd: (details) => _onPanEnd(),
         child: Container(
-          width: handleSize,
-          height: handleSize,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.blue, width: 1),
-            borderRadius: BorderRadius.circular(1),
-          ),
-          child: MouseRegion(
-            cursor: _getCursorForHandle(handleType),
-            child: Container(),
+          width: handleTouchSize,
+          height: handleTouchSize,
+          color: Colors.transparent, // Invisible touch area
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              width: isActive ? handleVisualSize + 4 : handleVisualSize,
+              height: isActive ? handleVisualSize + 4 : handleVisualSize,
+              decoration: BoxDecoration(
+                color: isActive ? Colors.blue.shade100 : Colors.white,
+                border: Border.all(
+                  color: isActive ? Colors.blue.shade700 : Colors.blue, 
+                  width: isActive ? 2 : 1.5,
+                ),
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: isActive ? [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ] : null,
+              ),
+              child: MouseRegion(
+                cursor: _getCursorForHandle(handleType),
+                child: Container(),
+              ),
+            ),
           ),
         ),
       ),
@@ -103,22 +157,43 @@ class _SelectionHandlesState extends State<SelectionHandles> {
   }
 
   Widget _buildEdgeHandle(Alignment alignment, _HandleType handleType) {
+    final isActive = _activeTouchHandle == handleType;
+    
     return Positioned.fromRect(
-      rect: _getHandleRect(alignment),
+      rect: _getTouchRect(alignment),
       child: GestureDetector(
+        onPanStart: (details) => _onPanStart(handleType),
         onPanUpdate: (details) => _handleResize(details.delta, handleType),
-        onPanEnd: (details) => _onResizeEnd(),
+        onPanEnd: (details) => _onPanEnd(),
         child: Container(
-          width: handleSize,
-          height: handleSize,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.blue, width: 1),
-            borderRadius: BorderRadius.circular(1),
-          ),
-          child: MouseRegion(
-            cursor: _getCursorForHandle(handleType),
-            child: Container(),
+          width: handleTouchSize,
+          height: handleTouchSize,
+          color: Colors.transparent,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              width: isActive ? handleVisualSize + 4 : handleVisualSize,
+              height: isActive ? handleVisualSize + 4 : handleVisualSize,
+              decoration: BoxDecoration(
+                color: isActive ? Colors.blue.shade100 : Colors.white,
+                border: Border.all(
+                  color: isActive ? Colors.blue.shade700 : Colors.blue, 
+                  width: isActive ? 2 : 1.5,
+                ),
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: isActive ? [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ] : null,
+              ),
+              child: MouseRegion(
+                cursor: _getCursorForHandle(handleType),
+                child: Container(),
+              ),
+            ),
           ),
         ),
       ),
@@ -126,24 +201,45 @@ class _SelectionHandlesState extends State<SelectionHandles> {
   }
 
   Widget _buildRotationHandle() {
+    final isActive = _activeTouchHandle == null && _isResizing; // Active during rotation
+    
     return Positioned(
-      left: currentSize.width / 2 - handleSize / 2,
-      top: -rotationHandleDistance - handleSize / 2,
+      left: currentSize.width / 2 - handleTouchSize / 2,
+      top: -rotationHandleDistance - handleTouchSize / 2,
       child: GestureDetector(
+        onPanStart: (details) => _onRotationStart(),
         onPanUpdate: (details) => _handleRotation(details.localPosition),
         onPanEnd: (details) => _onRotationEnd(),
         child: Container(
-          width: handleSize,
-          height: handleSize,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            border: Border.all(color: Colors.blue, width: 1),
-            borderRadius: BorderRadius.circular(handleSize / 2),
-          ),
-          child: const Icon(
-            Icons.rotate_right,
-            size: handleSize - 2,
-            color: Colors.blue,
+          width: handleTouchSize,
+          height: handleTouchSize,
+          color: Colors.transparent,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              width: isActive ? handleVisualSize + 6 : handleVisualSize + 2,
+              height: isActive ? handleVisualSize + 6 : handleVisualSize + 2,
+              decoration: BoxDecoration(
+                color: isActive ? Colors.green.shade100 : Colors.white,
+                border: Border.all(
+                  color: isActive ? Colors.green.shade700 : Colors.blue, 
+                  width: isActive ? 2 : 1.5,
+                ),
+                borderRadius: BorderRadius.circular((handleVisualSize + 2) / 2),
+                boxShadow: isActive ? [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.3),
+                    blurRadius: 4,
+                    spreadRadius: 1,
+                  ),
+                ] : null,
+              ),
+              child: Icon(
+                Icons.rotate_right,
+                size: handleVisualSize - 2,
+                color: isActive ? Colors.green.shade700 : Colors.blue,
+              ),
+            ),
           ),
         ),
       ),
@@ -158,43 +254,43 @@ class _SelectionHandlesState extends State<SelectionHandles> {
     
     switch (alignment) {
       case Alignment.topLeft:
-        left = -handleSize / 2;
-        top = -handleSize / 2;
+        left = -handleVisualSize / 2;
+        top = -handleVisualSize / 2;
         break;
       case Alignment.topCenter:
-        left = centerX - handleSize / 2;
-        top = -handleSize / 2;
+        left = centerX - handleVisualSize / 2;
+        top = -handleVisualSize / 2;
         break;
       case Alignment.topRight:
-        left = currentSize.width - handleSize / 2;
-        top = -handleSize / 2;
+        left = currentSize.width - handleVisualSize / 2;
+        top = -handleVisualSize / 2;
         break;
       case Alignment.centerLeft:
-        left = -handleSize / 2;
-        top = centerY - handleSize / 2;
+        left = -handleVisualSize / 2;
+        top = centerY - handleVisualSize / 2;
         break;
       case Alignment.centerRight:
-        left = currentSize.width - handleSize / 2;
-        top = centerY - handleSize / 2;
+        left = currentSize.width - handleVisualSize / 2;
+        top = centerY - handleVisualSize / 2;
         break;
       case Alignment.bottomLeft:
-        left = -handleSize / 2;
-        top = currentSize.height - handleSize / 2;
+        left = -handleVisualSize / 2;
+        top = currentSize.height - handleVisualSize / 2;
         break;
       case Alignment.bottomCenter:
-        left = centerX - handleSize / 2;
-        top = currentSize.height - handleSize / 2;
+        left = centerX - handleVisualSize / 2;
+        top = currentSize.height - handleVisualSize / 2;
         break;
       case Alignment.bottomRight:
-        left = currentSize.width - handleSize / 2;
-        top = currentSize.height - handleSize / 2;
+        left = currentSize.width - handleVisualSize / 2;
+        top = currentSize.height - handleVisualSize / 2;
         break;
       default:
         left = 0;
         top = 0;
     }
 
-    return Rect.fromLTWH(left, top, handleSize, handleSize);
+    return Rect.fromLTWH(left, top, handleVisualSize, handleVisualSize);
   }
 
   void _handleResize(Offset delta, _HandleType handleType) {
@@ -272,7 +368,95 @@ class _SelectionHandlesState extends State<SelectionHandles> {
   }
 
   void _onRotationEnd() {
-    // Rotation is already applied during gesture
+    setState(() {
+      _isResizing = false;
+    });
+    // Add haptic feedback on mobile
+    if (_isMobile) {
+      HapticFeedback.lightImpact();
+    }
+  }
+  
+  // Touch interaction methods
+  void _onPanStart(_HandleType handleType) {
+    setState(() {
+      _activeTouchHandle = handleType;
+      _isResizing = true;
+    });
+    // Add haptic feedback on mobile
+    if (_isMobile) {
+      HapticFeedback.lightImpact();
+    }
+  }
+  
+  void _onPanEnd() {
+    setState(() {
+      _activeTouchHandle = null;
+      _isResizing = false;
+    });
+    _onResizeEnd();
+    // Add haptic feedback on mobile
+    if (_isMobile) {
+      HapticFeedback.lightImpact();
+    }
+  }
+  
+  void _onRotationStart() {
+    setState(() {
+      _isResizing = true;
+    });
+    // Add haptic feedback on mobile
+    if (_isMobile) {
+      HapticFeedback.lightImpact();
+    }
+  }
+  
+  // Create larger touch rectangle for better mobile interaction
+  Rect _getTouchRect(Alignment alignment) {
+    final centerX = currentSize.width / 2;
+    final centerY = currentSize.height / 2;
+    
+    double left, top;
+    
+    switch (alignment) {
+      case Alignment.topLeft:
+        left = -handleTouchSize / 2;
+        top = -handleTouchSize / 2;
+        break;
+      case Alignment.topCenter:
+        left = centerX - handleTouchSize / 2;
+        top = -handleTouchSize / 2;
+        break;
+      case Alignment.topRight:
+        left = currentSize.width - handleTouchSize / 2;
+        top = -handleTouchSize / 2;
+        break;
+      case Alignment.centerLeft:
+        left = -handleTouchSize / 2;
+        top = centerY - handleTouchSize / 2;
+        break;
+      case Alignment.centerRight:
+        left = currentSize.width - handleTouchSize / 2;
+        top = centerY - handleTouchSize / 2;
+        break;
+      case Alignment.bottomLeft:
+        left = -handleTouchSize / 2;
+        top = currentSize.height - handleTouchSize / 2;
+        break;
+      case Alignment.bottomCenter:
+        left = centerX - handleTouchSize / 2;
+        top = currentSize.height - handleTouchSize / 2;
+        break;
+      case Alignment.bottomRight:
+        left = currentSize.width - handleTouchSize / 2;
+        top = currentSize.height - handleTouchSize / 2;
+        break;
+      default:
+        left = 0;
+        top = 0;
+    }
+    
+    return Rect.fromLTWH(left, top, handleTouchSize, handleTouchSize);
   }
 
   MouseCursor _getCursorForHandle(_HandleType handleType) {
@@ -294,6 +478,21 @@ class _SelectionHandlesState extends State<SelectionHandles> {
       case _HandleType.right:
         return SystemMouseCursors.resizeLeftRight;
     }
+  }
+  
+  /// Show mobile-friendly resize helper dialog
+  void _showMobileResizeHelper(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    showMobileResizeHelper(
+      context: context,
+      element: widget.element,
+      onResize: (newSize) {
+        setState(() {
+          currentSize = newSize;
+        });
+        widget.onResize(newSize);
+      },
+    );
   }
 }
 

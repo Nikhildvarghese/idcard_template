@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/painting.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/canvas_state.dart';
 import '../models/canvas_element.dart';
@@ -8,8 +10,17 @@ import '../models/canvas_element.dart';
 class CanvasNotifier extends StateNotifier<CanvasState> {
   CanvasNotifier() : super(CanvasState.empty());
 
+  // Maintain separate element lists for front/back without changing the model schema
+  List<CanvasElement> _frontElements = [];
+  List<CanvasElement> _backElements = [];
+  bool _isFrontSide = true; // true = front, false = back
+
+  bool get isFrontSide => _isFrontSide;
+
   /// Add a new element to the canvas
   void addElement(CanvasElement element) {
+    // Ensure side storage is initialized
+    _ensureSideStorage();
     state = state.addElement(element);
     _saveToHistory();
   }
@@ -238,6 +249,10 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
       zoom: state.zoom,
       panOffset: state.panOffset,
     );
+    // Clear side-specific storage as well
+    _frontElements = [];
+    _backElements = [];
+    _isFrontSide = true;
     _saveToHistory();
   }
 
@@ -261,11 +276,15 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     return state.getElementAtPoint(point);
   }
 
-  /// Handle tap on canvas
+  /// Handle tap on canvas with mobile-optimized touch area
   void handleCanvasTap(Offset localPosition) {
-    final element = getElementAtPoint(localPosition);
+    final element = _getElementAtPointWithTouchTolerance(localPosition);
     if (element != null) {
       selectElement(element.id);
+      // Add haptic feedback on mobile
+      if (_isMobile) {
+        HapticFeedback.lightImpact();
+      }
     } else {
       clearSelection();
     }
@@ -331,6 +350,85 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
           state = state.copyWith(elements: newElements);
         }
       }
+    }
+  }
+  
+  // Mobile-specific helper methods
+  
+  /// Check if running on mobile platform
+  bool get _isMobile => !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS);
+  
+  /// Touch tolerance for mobile devices (in pixels)
+  static const double _touchTolerance = 20.0;
+  
+  /// Get element at point with touch tolerance for better mobile interaction
+  CanvasElement? _getElementAtPointWithTouchTolerance(Offset point) {
+    // First try exact hit testing
+    final exactElement = getElementAtPoint(point);
+    if (exactElement != null) {
+      return exactElement;
+    }
+    
+    // If no exact match and we're on mobile, expand the search area
+    if (_isMobile) {
+      // Check in a square around the touch point
+      for (final element in state.elements.reversed) {
+        final elementBounds = Rect.fromLTWH(
+          element.position.dx - _touchTolerance / 2,
+          element.position.dy - _touchTolerance / 2,
+          element.size.width + _touchTolerance,
+          element.size.height + _touchTolerance,
+        );
+        
+        if (elementBounds.contains(point)) {
+          return element;
+        }
+      }
+    }
+    
+    return null;
+  }
+  // --- Front/Back side management ---
+  void _ensureSideStorage() {
+    // Initialize side lists from current state on first use
+    if (_frontElements.isEmpty && _backElements.isEmpty) {
+      _frontElements = List<CanvasElement>.from(state.elements);
+      _backElements = <CanvasElement>[];
+      _isFrontSide = true;
+    }
+  }
+
+  void goToFrontSide() {
+    _ensureSideStorage();
+    if (!_isFrontSide) {
+      _backElements = List<CanvasElement>.from(state.elements);
+      _isFrontSide = true;
+      state = state.copyWith(
+        elements: List<CanvasElement>.from(_frontElements),
+        selectedElementId: null,
+        multiSelectedElementIds: [],
+      );
+    }
+  }
+
+  void goToBackSide() {
+    _ensureSideStorage();
+    if (_isFrontSide) {
+      _frontElements = List<CanvasElement>.from(state.elements);
+      _isFrontSide = false;
+      state = state.copyWith(
+        elements: List<CanvasElement>.from(_backElements),
+        selectedElementId: null,
+        multiSelectedElementIds: [],
+      );
+    }
+  }
+
+  void toggleSide() {
+    if (_isFrontSide) {
+      goToBackSide();
+    } else {
+      goToFrontSide();
     }
   }
 }
