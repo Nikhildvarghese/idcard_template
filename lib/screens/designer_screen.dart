@@ -239,19 +239,34 @@ class DesignerScreen extends ConsumerWidget {
 
       // Export using ExportService
       final exportService = ExportService();
-      final success = await exportService.exportAsPNG(canvasState);
+      final result = await exportService.exportAsPNG(canvasState);
 
       Navigator.pop(context); // Close loading dialog
 
-      if (success) {
+      if (result['success'] == true) {
+        final savedToGallery = result['savedToGallery'] == true;
+        final fileName = result['fileName'] ?? 'id_card.png';
+        final canShare = result['canShare'] == true;
+        
+        String message = 'Design exported as PNG successfully!';
+        if (savedToGallery) {
+          message += ' Saved to gallery.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Design exported as PNG successfully!'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
+            action: canShare ? SnackBarAction(
+              label: 'Share',
+              onPressed: () {
+                exportService.shareFile(result['filePath'], fileName);
+              },
+            ) : null,
           ),
         );
       } else {
-        throw Exception('Export failed');
+        throw Exception(result['error'] ?? 'Export failed');
       }
     } catch (e) {
       Navigator.pop(context); // Close loading dialog if still open
@@ -284,19 +299,34 @@ class DesignerScreen extends ConsumerWidget {
 
       // Export using ExportService
       final exportService = ExportService();
-      final success = await exportService.exportAsPDF(canvasState);
+      final result = await exportService.exportAsPDF(canvasState);
 
       Navigator.pop(context); // Close loading dialog
 
-      if (success) {
+      if (result['success'] == true) {
+        final savedToDownloads = result['savedToDownloads'] == true;
+        final fileName = result['fileName'] ?? 'id_card.pdf';
+        final canShare = result['canShare'] == true;
+        
+        String message = 'Design exported as PDF successfully!';
+        if (savedToDownloads) {
+          message += ' Saved to Downloads folder.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Design exported as PDF successfully!'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
+            action: canShare ? SnackBarAction(
+              label: 'Share',
+              onPressed: () {
+                exportService.shareFile(result['filePath'], fileName);
+              },
+            ) : null,
           ),
         );
       } else {
-        throw Exception('Export failed');
+        throw Exception(result['error'] ?? 'Export failed');
       }
     } catch (e) {
       Navigator.pop(context); // Close loading dialog if still open

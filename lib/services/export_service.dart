@@ -2,11 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:gal/gal.dart';
 import '../models/canvas_state.dart';
 import '../models/canvas_element.dart';
 
@@ -15,77 +18,78 @@ class ExportService {
   static const String baseUrl = 'https://your-backend-api.com'; // Replace with your API URL
   final Dio _dio = Dio();
 
-  /// Check and request storage permission
-  Future<bool> _checkStoragePermission() async {
+  /// Check and request proper permissions for Android 13+
+  Future<bool> _checkPermissions() async {
     if (Platform.isAndroid) {
-      final status = await Permission.storage.status;
-      if (!status.isGranted) {
-        final result = await Permission.storage.request();
-        return result.isGranted;
+      // For Android 13+, we need different permissions
+      final photos = await Permission.photos.status;
+      if (!photos.isGranted) {
+        final result = await Permission.photos.request();
+        if (!result.isGranted) {
+          return false;
+        }
       }
       return true;
     }
     return true; // iOS doesn't require storage permission for app directories
   }
 
-  /// Get the appropriate directory for saving files
-  Future<Directory> _getSaveDirectory() async {
-    if (Platform.isAndroid) {
-      // Try to get external storage first (Downloads folder)
-      try {
-        if (await _checkStoragePermission()) {
-          return Directory('/storage/emulated/0/Download');
-        } else {
-          throw Exception("Storage permission denied");
-        }
-      } catch (e) {
-        // Fallback to application documents directory
-        return await getApplicationDocumentsDirectory();
-      }
-    } else {
-      // For iOS, use documents directory
-      return await getApplicationDocumentsDirectory();
-    }
-  }
-
-  /// Export canvas as PNG image
-  Future<bool> exportAsPNG(CanvasState canvasState) async {
+  /// Export canvas as PNG image with proper mobile file saving
+  Future<Map<String, dynamic>> exportAsPNG(CanvasState canvasState) async {
     try {
-      // Get the save directory
-      final directory = await _getSaveDirectory();
+      // Create temporary file first
+      final tempDir = await getTemporaryDirectory();
+      final fileName = 'id_card_${DateTime.now().millisecondsSinceEpoch}.png';
+      final tempFile = File('${tempDir.path}/$fileName');
       
-      // Create the directory if it doesn't exist
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
+      // Create image data (replace with actual canvas rendering)
+      final imageData = _createMockImageData(canvasState);
+      
+      // Write to temporary file
+      await tempFile.writeAsBytes(imageData);
+      
+      String savedPath = tempFile.path;
+      bool savedToGallery = false;
+      
+      // Try to save to gallery/photos app (user accessible)
+      if (Platform.isAndroid || Platform.isIOS) {
+        try {
+          // Check and request permissions if needed
+          if (!await Gal.hasAccess(toAlbum: true)) {
+            await Gal.requestAccess(toAlbum: true);
+          }
+          
+          // Save image to gallery using Gal
+          await Gal.putImageBytes(imageData, name: fileName);
+          savedToGallery = true;
+        } catch (e) {
+          print('Could not save to gallery: $e');
+        }
       }
       
-      final fileName = 'id_card_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = File('${directory.path}/$fileName');
-      
-      // Create mock image data (replace with actual canvas rendering)
-      final mockImageData = _createMockImageData(canvasState);
-      
-      // Write data to file
-      await file.writeAsBytes(mockImageData);
-      
-      print('PNG exported to: ${file.path}');
-      return true;
+      return {
+        'success': true,
+        'filePath': savedPath,
+        'fileName': fileName,
+        'savedToGallery': savedToGallery,
+        'canShare': true,
+      };
     } catch (e) {
       print('Error exporting PNG: $e');
-      return false;
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
     }
   }
 
-  /// Export canvas as PDF document
-  Future<bool> exportAsPDF(CanvasState canvasState) async {
+  /// Export canvas as PDF document with proper mobile file saving
+  Future<Map<String, dynamic>> exportAsPDF(CanvasState canvasState) async {
     try {
-      // Get the save directory
-      final directory = await _getSaveDirectory();
-      
-      // Create the directory if it doesn't exist
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
-      }
+      // Create temporary file first
+      final tempDir = await getTemporaryDirectory();
+      final fileName = 'id_card_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final tempFile = File('${tempDir.path}/$fileName');
       
       final pdf = pw.Document();
 
@@ -102,16 +106,75 @@ class ExportService {
         ),
       );
 
-      final fileName = 'id_card_${DateTime.now().millisecondsSinceEpoch}.pdf';
-      final file = File('${directory.path}/$fileName');
-
-      // Save PDF to file
-      await file.writeAsBytes(await pdf.save());
+      // Save PDF to temporary file
+      await tempFile.writeAsBytes(await pdf.save());
       
-      print('PDF exported to: ${file.path}');
-      return true;
+      // Copy to Downloads folder if possible
+      String savedPath = tempFile.path;
+      bool savedToDownloads = false;
+      
+      try {
+        if (Platform.isAndroid) {
+          final downloadsDir = Directory('/storage/emulated/0/Download');
+          if (await downloadsDir.exists()) {
+            final downloadFile = File('${downloadsDir.path}/$fileName');
+            await tempFile.copy(downloadFile.path);
+            savedPath = downloadFile.path;
+            savedToDownloads = true;
+          }
+        }
+      } catch (e) {
+        print('Could not save to Downloads: $e');
+      }
+      
+      return {
+        'success': true,
+        'filePath': savedPath,
+        'fileName': fileName,
+        'savedToDownloads': savedToDownloads,
+        'canShare': true,
+      };
     } catch (e) {
       print('Error exporting PDF: $e');
+      return {
+        'success': false,
+        'error': e.toString(),
+      };
+    }
+  }
+  
+  /// Share exported file with other apps
+  Future<bool> shareFile(String filePath, String fileName) async {
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        await Share.shareXFiles(
+          [XFile(filePath)],
+          text: 'ID Card created with ID Card Builder',
+          subject: fileName,
+        );
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error sharing file: $e');
+      return false;
+    }
+  }
+  
+  /// Save image to device gallery
+  Future<bool> saveImageToGallery(String filePath) async {
+    try {
+      // Check permissions
+      if (!await Gal.hasAccess(toAlbum: true)) {
+        await Gal.requestAccess(toAlbum: true);
+      }
+      
+      // Save image to gallery
+      await Gal.putImage(filePath);
+      return true;
+    } catch (e) {
+      print('Error saving to gallery: $e');
       return false;
     }
   }

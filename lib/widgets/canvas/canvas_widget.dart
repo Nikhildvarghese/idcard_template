@@ -193,6 +193,8 @@ class CanvasToolbar extends ConsumerWidget {
     final canvasState = ref.watch(canvasProvider);
     final canvasNotifier = ref.read(canvasProvider.notifier);
     final selectedElement = ref.watch(selectedElementProvider);
+    final canUndo = ref.watch(canUndoProvider);
+    final canRedo = ref.watch(canRedoProvider);
     final isFrontSide = canvasNotifier.isFrontSide;
 
     return Container(
@@ -209,13 +211,19 @@ class CanvasToolbar extends ConsumerWidget {
         children: [
           // Undo/Redo buttons
           IconButton(
-            icon: const Icon(Icons.undo),
-            onPressed: () => canvasNotifier.undo(),
+            icon: Icon(
+              Icons.undo,
+              color: canUndo ? null : Colors.grey.shade400,
+            ),
+            onPressed: canUndo ? () => canvasNotifier.undo() : null,
             tooltip: 'Undo',
           ),
           IconButton(
-            icon: const Icon(Icons.redo),
-            onPressed: () => canvasNotifier.redo(),
+            icon: Icon(
+              Icons.redo,
+              color: canRedo ? null : Colors.grey.shade400,
+            ),
+            onPressed: canRedo ? () => canvasNotifier.redo() : null,
             tooltip: 'Redo',
           ),
           
