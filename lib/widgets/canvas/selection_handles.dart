@@ -24,10 +24,10 @@ class SelectionHandles extends StatefulWidget {
 }
 
 class _SelectionHandlesState extends State<SelectionHandles> {
-  // Mobile-optimized handle sizes
-  static const double handleVisualSize = 10.0; // Visual size
-  static const double handleTouchSize = 32.0;   // Touch area size (much larger)
-  static const double rotationHandleDistance = 30.0;
+  // Mobile-optimized handle sizes - increased for better interaction
+  static const double handleVisualSize = 14.0; // Visual size (increased from 10.0)
+  static const double handleTouchSize = 40.0;   // Touch area size (increased from 32.0)
+  static const double rotationHandleDistance = 35.0;
   
   late Size currentSize;
   late double currentRotation;
@@ -71,23 +71,7 @@ class _SelectionHandlesState extends State<SelectionHandles> {
                 width: 1.5,
               ),
             ),
-            // Add a subtle hint for mobile users
-            child: _isMobile && !_isResizing ? Positioned(
-              right: 4,
-              top: 4,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: const Icon(
-                  Icons.touch_app,
-                  size: 12,
-                  color: Colors.white,
-                ),
-              ),
-            ) : null,
+            // Removed mobile touch hint as it was causing visual confusion
           ),
         ),
 

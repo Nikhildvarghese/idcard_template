@@ -36,9 +36,14 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     state = state.updateElement(updatedElement);
   }
 
-  /// Select element
+  /// Select element and automatically bring to front
   void selectElement(String? elementId) {
     state = state.selectElement(elementId);
+    
+    // Automatically bring selected element to front for better UX
+    if (elementId != null) {
+      state = state.bringToFront(elementId);
+    }
   }
 
   /// Add to multi-selection
