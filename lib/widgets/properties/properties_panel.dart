@@ -40,27 +40,21 @@ class PropertiesPanel extends ConsumerWidget {
                 const SizedBox(width: 8),
                 const Text(
                   'Properties',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 if (selectedElement != null)
                   Text(
                     _getElementTypeName(selectedElement.type),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                   ),
               ],
             ),
           ),
-          
+
           // Properties content
           Expanded(
-            child: selectedElement != null 
+            child: selectedElement != null
                 ? _buildElementProperties(context, ref, selectedElement)
                 : _buildCanvasProperties(context, ref, canvasState),
           ),
@@ -69,15 +63,19 @@ class PropertiesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildElementProperties(BuildContext context, WidgetRef ref, CanvasElement element) {
+  Widget _buildElementProperties(
+    BuildContext context,
+    WidgetRef ref,
+    CanvasElement element,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         // Common properties for all elements
         _buildCommonProperties(context, ref, element),
-        
+
         const SizedBox(height: 16),
-        
+
         // Element-specific properties
         if (element.type == ElementType.text)
           _buildTextProperties(context, ref, element as TextElement),
@@ -91,19 +89,20 @@ class PropertiesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildCanvasProperties(BuildContext context, WidgetRef ref, canvasState) {
+  Widget _buildCanvasProperties(
+    BuildContext context,
+    WidgetRef ref,
+    canvasState,
+  ) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         const Text(
           'Canvas Settings',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        
+
         // Canvas size
         _buildSectionTitle('Canvas Size'),
         Row(
@@ -116,9 +115,12 @@ class PropertiesPanel extends ConsumerWidget {
                   border: OutlineInputBorder(),
                 ),
                 onFieldSubmitted: (value) {
-                  final width = double.tryParse(value) ?? canvasState.canvasSize.width;
+                  final width =
+                      double.tryParse(value) ?? canvasState.canvasSize.width;
                   final canvasNotifier = ref.read(canvasProvider.notifier);
-                  canvasNotifier.setCanvasSize(Size(width, canvasState.canvasSize.height));
+                  canvasNotifier.setCanvasSize(
+                    Size(width, canvasState.canvasSize.height),
+                  );
                 },
               ),
             ),
@@ -131,17 +133,20 @@ class PropertiesPanel extends ConsumerWidget {
                   border: OutlineInputBorder(),
                 ),
                 onFieldSubmitted: (value) {
-                  final height = double.tryParse(value) ?? canvasState.canvasSize.height;
+                  final height =
+                      double.tryParse(value) ?? canvasState.canvasSize.height;
                   final canvasNotifier = ref.read(canvasProvider.notifier);
-                  canvasNotifier.setCanvasSize(Size(canvasState.canvasSize.width, height));
+                  canvasNotifier.setCanvasSize(
+                    Size(canvasState.canvasSize.width, height),
+                  );
                 },
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Background color
         _buildSectionTitle('Background'),
         _buildColorPicker(
@@ -153,9 +158,9 @@ class PropertiesPanel extends ConsumerWidget {
             canvasNotifier.setBackgroundColor(color);
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Grid settings
         _buildSectionTitle('Grid'),
         CheckboxListTile(
@@ -178,12 +183,16 @@ class PropertiesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildCommonProperties(BuildContext context, WidgetRef ref, CanvasElement element) {
+  Widget _buildCommonProperties(
+    BuildContext context,
+    WidgetRef ref,
+    CanvasElement element,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Position & Size'),
-        
+
         // Position
         Row(
           children: [
@@ -196,9 +205,10 @@ class PropertiesPanel extends ConsumerWidget {
                 ),
                 onFieldSubmitted: (value) {
                   final x = double.tryParse(value) ?? element.position.dx;
-                  _updateElement(ref, element.copyWith(
-                    position: Offset(x, element.position.dy),
-                  ));
+                  _updateElement(
+                    ref,
+                    element.copyWith(position: Offset(x, element.position.dy)),
+                  );
                 },
               ),
             ),
@@ -212,17 +222,18 @@ class PropertiesPanel extends ConsumerWidget {
                 ),
                 onFieldSubmitted: (value) {
                   final y = double.tryParse(value) ?? element.position.dy;
-                  _updateElement(ref, element.copyWith(
-                    position: Offset(element.position.dx, y),
-                  ));
+                  _updateElement(
+                    ref,
+                    element.copyWith(position: Offset(element.position.dx, y)),
+                  );
                 },
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Size
         Row(
           children: [
@@ -235,9 +246,10 @@ class PropertiesPanel extends ConsumerWidget {
                 ),
                 onFieldSubmitted: (value) {
                   final width = double.tryParse(value) ?? element.size.width;
-                  _updateElement(ref, element.copyWith(
-                    size: Size(width, element.size.height),
-                  ));
+                  _updateElement(
+                    ref,
+                    element.copyWith(size: Size(width, element.size.height)),
+                  );
                 },
               ),
             ),
@@ -251,19 +263,22 @@ class PropertiesPanel extends ConsumerWidget {
                 ),
                 onFieldSubmitted: (value) {
                   final height = double.tryParse(value) ?? element.size.height;
-                  _updateElement(ref, element.copyWith(
-                    size: Size(element.size.width, height),
-                  ));
+                  _updateElement(
+                    ref,
+                    element.copyWith(size: Size(element.size.width, height)),
+                  );
                 },
               ),
             ),
           ],
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Rotation
-        Text('Rotation: ${(element.rotation * 180 / 3.14159).toStringAsFixed(0)}°'),
+        Text(
+          'Rotation: ${(element.rotation * 180 / 3.14159).toStringAsFixed(0)}°',
+        ),
         Slider(
           value: element.rotation,
           min: -3.14159,
@@ -272,9 +287,9 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(rotation: value));
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Opacity
         Text('Opacity: ${(element.opacity * 100).toStringAsFixed(0)}%'),
         Slider(
@@ -285,9 +300,9 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(opacity: value));
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Layer controls
         Row(
           children: [
@@ -318,12 +333,16 @@ class PropertiesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildTextProperties(BuildContext context, WidgetRef ref, TextElement element) {
+  Widget _buildTextProperties(
+    BuildContext context,
+    WidgetRef ref,
+    TextElement element,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Text Properties'),
-        
+
         // Text content
         TextFormField(
           initialValue: element.text,
@@ -336,9 +355,9 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(text: value));
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Font size
         Text('Font Size: ${element.fontSize.toStringAsFixed(0)}'),
         Slider(
@@ -349,9 +368,9 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(fontSize: value));
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Font weight
         DropdownButtonFormField<FontWeight>(
           value: element.fontWeight,
@@ -371,9 +390,93 @@ class PropertiesPanel extends ConsumerWidget {
             }
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+        // Font family
+        DropdownButtonFormField<String>(
+          value: element.fontFamily,
+          decoration: const InputDecoration(
+            labelText: 'Font Family',
+            border: OutlineInputBorder(),
+          ),
+          items: const [
+            DropdownMenuItem(value: 'Roboto', child: Text('Roboto')),
+            DropdownMenuItem(value: 'OpenSans', child: Text('Open Sans')),
+            DropdownMenuItem(value: 'Lato', child: Text('Lato')),
+            DropdownMenuItem(value: 'Montserrat', child: Text('Montserrat')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              _updateElement(ref, element.copyWith(fontFamily: value));
+            }
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        // Style toggles
+        Row(
+          children: [
+            IconButton(
+              icon: Icon(
+                Icons.format_bold,
+                color: element.fontWeight == FontWeight.bold
+                    ? Colors.blue
+                    : null,
+              ),
+              onPressed: () {
+                _updateElement(
+                  ref,
+                  element.copyWith(
+                    fontWeight: element.fontWeight == FontWeight.bold
+                        ? FontWeight.normal
+                        : FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.format_italic,
+                color: element.fontStyle == FontStyle.italic
+                    ? Colors.blue
+                    : null,
+              ),
+              onPressed: () {
+                _updateElement(
+                  ref,
+                  element.copyWith(
+                    fontStyle: element.fontStyle == FontStyle.italic
+                        ? FontStyle.normal
+                        : FontStyle.italic,
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.format_underline,
+                color: element.textDecoration == TextDecoration.underline
+                    ? Colors.blue
+                    : null,
+              ),
+              onPressed: () {
+                _updateElement(
+                  ref,
+                  element.copyWith(
+                    textDecoration:
+                        element.textDecoration == TextDecoration.underline
+                        ? TextDecoration.none
+                        : TextDecoration.underline,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
         // Text alignment
         DropdownButtonFormField<TextAlign>(
           value: element.textAlign,
@@ -393,9 +496,9 @@ class PropertiesPanel extends ConsumerWidget {
             }
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Text color
         _buildColorPicker(
           context,
@@ -407,12 +510,16 @@ class PropertiesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildImageProperties(BuildContext context, WidgetRef ref, ImageElement element) {
+  Widget _buildImageProperties(
+    BuildContext context,
+    WidgetRef ref,
+    ImageElement element,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Image Properties'),
-        
+
         // Fit
         DropdownButtonFormField<BoxFit>(
           value: element.fit,
@@ -425,7 +532,10 @@ class PropertiesPanel extends ConsumerWidget {
             DropdownMenuItem(value: BoxFit.contain, child: Text('Contain')),
             DropdownMenuItem(value: BoxFit.fill, child: Text('Fill')),
             DropdownMenuItem(value: BoxFit.fitWidth, child: Text('Fit Width')),
-            DropdownMenuItem(value: BoxFit.fitHeight, child: Text('Fit Height')),
+            DropdownMenuItem(
+              value: BoxFit.fitHeight,
+              child: Text('Fit Height'),
+            ),
           ],
           onChanged: (value) {
             if (value != null) {
@@ -433,9 +543,9 @@ class PropertiesPanel extends ConsumerWidget {
             }
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Border radius
         Text('Border Radius: ${element.borderRadius.toStringAsFixed(0)}'),
         Slider(
@@ -446,9 +556,9 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(borderRadius: value));
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Border width
         Text('Border Width: ${element.borderWidth.toStringAsFixed(0)}'),
         Slider(
@@ -459,26 +569,31 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(borderWidth: value));
           },
         ),
-        
+
         if (element.borderWidth > 0) ...[
           const SizedBox(height: 12),
           _buildColorPicker(
             context,
             'Border Color',
             element.borderColor ?? Colors.black,
-            (color) => _updateElement(ref, element.copyWith(borderColor: color)),
+            (color) =>
+                _updateElement(ref, element.copyWith(borderColor: color)),
           ),
         ],
       ],
     );
   }
 
-  Widget _buildShapeProperties(BuildContext context, WidgetRef ref, ShapeElement element) {
+  Widget _buildShapeProperties(
+    BuildContext context,
+    WidgetRef ref,
+    ShapeElement element,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Shape Properties'),
-        
+
         // Fill color
         _buildColorPicker(
           context,
@@ -486,9 +601,9 @@ class PropertiesPanel extends ConsumerWidget {
           element.fillColor,
           (color) => _updateElement(ref, element.copyWith(fillColor: color)),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Stroke width
         Text('Stroke Width: ${element.strokeWidth.toStringAsFixed(0)}'),
         Slider(
@@ -499,17 +614,18 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(strokeWidth: value));
           },
         ),
-        
+
         if (element.strokeWidth > 0) ...[
           const SizedBox(height: 12),
           _buildColorPicker(
             context,
             'Stroke Color',
             element.strokeColor ?? Colors.black,
-            (color) => _updateElement(ref, element.copyWith(strokeColor: color)),
+            (color) =>
+                _updateElement(ref, element.copyWith(strokeColor: color)),
           ),
         ],
-        
+
         if (element.shapeType == ShapeType.rectangle) ...[
           const SizedBox(height: 12),
           Text('Corner Radius: ${element.borderRadius.toStringAsFixed(0)}'),
@@ -526,12 +642,16 @@ class PropertiesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildLineProperties(BuildContext context, WidgetRef ref, LineElement element) {
+  Widget _buildLineProperties(
+    BuildContext context,
+    WidgetRef ref,
+    LineElement element,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionTitle('Line Properties'),
-        
+
         // Line color
         _buildColorPicker(
           context,
@@ -539,9 +659,9 @@ class PropertiesPanel extends ConsumerWidget {
           element.color,
           (color) => _updateElement(ref, element.copyWith(color: color)),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Stroke width
         Text('Line Width: ${element.strokeWidth.toStringAsFixed(0)}'),
         Slider(
@@ -552,9 +672,9 @@ class PropertiesPanel extends ConsumerWidget {
             _updateElement(ref, element.copyWith(strokeWidth: value));
           },
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Stroke cap
         DropdownButtonFormField<StrokeCap>(
           value: element.strokeCap,
@@ -582,10 +702,7 @@ class PropertiesPanel extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -600,7 +717,8 @@ class PropertiesPanel extends ConsumerWidget {
       children: [
         Expanded(child: Text(label)),
         GestureDetector(
-          onTap: () => _showColorPickerDialog(context, currentColor, onColorChanged),
+          onTap: () =>
+              _showColorPickerDialog(context, currentColor, onColorChanged),
           child: Container(
             width: 40,
             height: 40,

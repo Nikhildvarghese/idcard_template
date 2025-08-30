@@ -6,27 +6,21 @@ import 'dart:math' as math;
 import '../../models/canvas_element.dart';
 import '../../providers/canvas_provider.dart';
 import 'text_editing_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Widget that renders different types of canvas elements
 class ElementRenderer extends ConsumerWidget {
   final CanvasElement element;
 
-  const ElementRenderer({
-    super.key,
-    required this.element,
-  });
+  const ElementRenderer({super.key, required this.element});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final canvasState = ref.watch(canvasProvider);
-    
+
     switch (element.type) {
       case ElementType.text:
-        return _renderTextElement(
-          element as TextElement,
-          canvasState,
-          ref,
-        );
+        return _renderTextElement(element as TextElement, canvasState, ref);
       case ElementType.image:
         return _renderImageElement(element as ImageElement);
       case ElementType.shape:
@@ -38,17 +32,19 @@ class ElementRenderer extends ConsumerWidget {
     }
   }
 
-  Widget _renderTextElement(TextElement element, CanvasState canvasState, WidgetRef ref) {
+  Widget _renderTextElement(
+    TextElement element,
+    CanvasState canvasState,
+    WidgetRef ref,
+  ) {
     final isEditing = canvasState.editingTextElementId == element.id;
     final canvasNotifier = ref.read(canvasProvider.notifier);
-    
+
     return Container(
       width: element.size.width,
       height: element.size.height,
       decoration: element.isSelected
-          ? BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 2),
-            )
+          ? BoxDecoration(border: Border.all(color: Colors.blue, width: 2))
           : null,
       child: isEditing
           ? TextEditingWidget(
@@ -62,8 +58,8 @@ class ElementRenderer extends ConsumerWidget {
             )
           : Text(
               element.text,
-              style: TextStyle(
-                fontFamily: element.fontFamily,
+              style: GoogleFonts.getFont(
+                element.fontFamily.isNotEmpty ? element.fontFamily : 'Roboto',
                 fontSize: element.fontSize,
                 color: element.color,
                 fontWeight: element.fontWeight,
@@ -93,11 +89,7 @@ class ElementRenderer extends ConsumerWidget {
             width: element.size.width,
             height: element.size.height,
             color: Colors.grey.shade200,
-            child: const Icon(
-              Icons.broken_image,
-              color: Colors.grey,
-              size: 50,
-            ),
+            child: const Icon(Icons.broken_image, color: Colors.grey, size: 50),
           );
         },
       );
@@ -129,11 +121,7 @@ class ElementRenderer extends ConsumerWidget {
           width: element.size.width,
           height: element.size.height,
           color: Colors.grey.shade200,
-          child: const Icon(
-            Icons.image,
-            color: Colors.grey,
-            size: 50,
-          ),
+          child: const Icon(Icons.image, color: Colors.grey, size: 50),
         );
       }
     }
@@ -173,14 +161,9 @@ class ElementRenderer extends ConsumerWidget {
       width: element.size.width,
       height: element.size.height,
       decoration: element.isSelected
-          ? BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 2),
-            )
+          ? BoxDecoration(border: Border.all(color: Colors.blue, width: 2))
           : null,
-      child: CustomPaint(
-        painter: ShapePainter(element),
-        size: element.size,
-      ),
+      child: CustomPaint(painter: ShapePainter(element), size: element.size),
     );
   }
 
@@ -189,14 +172,9 @@ class ElementRenderer extends ConsumerWidget {
       width: element.size.width,
       height: element.size.height,
       decoration: element.isSelected
-          ? BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 2),
-            )
+          ? BoxDecoration(border: Border.all(color: Colors.blue, width: 2))
           : null,
-      child: CustomPaint(
-        painter: LinePainter(element),
-        size: element.size,
-      ),
+      child: CustomPaint(painter: LinePainter(element), size: element.size),
     );
   }
 
@@ -204,9 +182,7 @@ class ElementRenderer extends ConsumerWidget {
     return Container(
       width: element.size.width,
       height: element.size.height,
-      decoration: BoxDecoration(
-        color: element.color,
-      ),
+      decoration: BoxDecoration(color: element.color),
       child: element.imagePath != null || element.imageUrl != null
           ? _getBackgroundImage(element)
           : null,
@@ -224,10 +200,7 @@ class ElementRenderer extends ConsumerWidget {
           width: element.size.width,
           height: element.size.height,
           color: Colors.grey.shade200,
-          child: const Icon(
-            Icons.broken_image,
-            color: Colors.grey,
-          ),
+          child: const Icon(Icons.broken_image, color: Colors.grey),
         ),
       );
     } else if (element.imagePath != null) {
@@ -242,10 +215,7 @@ class ElementRenderer extends ConsumerWidget {
             width: element.size.width,
             height: element.size.height,
             color: Colors.grey.shade200,
-            child: const Icon(
-              Icons.broken_image,
-              color: Colors.grey,
-            ),
+            child: const Icon(Icons.broken_image, color: Colors.grey),
           ),
         );
       }
@@ -319,130 +289,163 @@ class ShapePainter extends CustomPainter {
           canvas.drawPath(path, strokePaint);
         }
         break;
-        case ShapeType.diamond:
-  final path = Path()
-    ..moveTo(size.width / 2, 0) // top
-    ..lineTo(size.width, size.height / 2) // right
-    ..lineTo(size.width / 2, size.height) // bottom
-    ..lineTo(0, size.height / 2) // left
-    ..close();
-  canvas.drawPath(path, paint);
-  break;
+      case ShapeType.diamond:
+        final path = Path()
+          ..moveTo(size.width / 2, 0) // top
+          ..lineTo(size.width, size.height / 2) // right
+          ..lineTo(size.width / 2, size.height) // bottom
+          ..lineTo(0, size.height / 2) // left
+          ..close();
+        canvas.drawPath(path, paint);
+        break;
 
-  case ShapeType.heart:
-  final path = Path();
-  path.moveTo(size.width / 2, size.height * 0.75);
-  path.cubicTo(
-    size.width * 1.1, size.height * 0.35,
-    size.width * 0.7, size.height * -0.25,
-    size.width / 2, size.height * 0.25,
-  );
-  path.cubicTo(
-    size.width * 0.3, size.height * -0.25,
-    size.width * -0.1, size.height * 0.35,
-    size.width / 2, size.height * 0.75,
-  );
-  canvas.drawPath(path, paint);
-  break;
-   case ShapeType.hexagon: // 👈 NEW CASE
-    final path = _createPolygonPath(size, 6);
-    canvas.drawPath(path, paint);
-    if (element.strokeWidth > 0) {
-      canvas.drawPath(path, strokePaint);
-    }
-    break;
-    case ShapeType.pentagon:
-  final path = _createPolygonPath(size, 5);
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.heart:
+        final path = Path();
+        path.moveTo(size.width / 2, size.height * 0.75);
+        path.cubicTo(
+          size.width * 1.1,
+          size.height * 0.35,
+          size.width * 0.7,
+          size.height * -0.25,
+          size.width / 2,
+          size.height * 0.25,
+        );
+        path.cubicTo(
+          size.width * 0.3,
+          size.height * -0.25,
+          size.width * -0.1,
+          size.height * 0.35,
+          size.width / 2,
+          size.height * 0.75,
+        );
+        canvas.drawPath(path, paint);
+        break;
+      case ShapeType.hexagon: // 👈 NEW CASE
+        final path = _createPolygonPath(size, 6);
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
+      case ShapeType.pentagon:
+        final path = _createPolygonPath(size, 5);
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.octagon:
-  final path = _createPolygonPath(size, 8);
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.octagon:
+        final path = _createPolygonPath(size, 8);
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.parallelogram:
-  final path = Path()
-    ..moveTo(size.width * 0.25, 0)
-    ..lineTo(size.width, 0)
-    ..lineTo(size.width * 0.75, size.height)
-    ..lineTo(0, size.height)
-    ..close();
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.parallelogram:
+        final path = Path()
+          ..moveTo(size.width * 0.25, 0)
+          ..lineTo(size.width, 0)
+          ..lineTo(size.width * 0.75, size.height)
+          ..lineTo(0, size.height)
+          ..close();
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.trapezoid:
-  final path = Path()
-    ..moveTo(size.width * 0.2, 0)
-    ..lineTo(size.width * 0.8, 0)
-    ..lineTo(size.width, size.height)
-    ..lineTo(0, size.height)
-    ..close();
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.trapezoid:
+        final path = Path()
+          ..moveTo(size.width * 0.2, 0)
+          ..lineTo(size.width * 0.8, 0)
+          ..lineTo(size.width, size.height)
+          ..lineTo(0, size.height)
+          ..close();
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.arrow:
-  final path = Path()
-    ..moveTo(0, size.height * 0.4)
-    ..lineTo(size.width * 0.6, size.height * 0.4)
-    ..lineTo(size.width * 0.6, 0)
-    ..lineTo(size.width, size.height / 2)
-    ..lineTo(size.width * 0.6, size.height)
-    ..lineTo(size.width * 0.6, size.height * 0.6)
-    ..lineTo(0, size.height * 0.6)
-    ..close();
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.arrow:
+        final path = Path()
+          ..moveTo(0, size.height * 0.4)
+          ..lineTo(size.width * 0.6, size.height * 0.4)
+          ..lineTo(size.width * 0.6, 0)
+          ..lineTo(size.width, size.height / 2)
+          ..lineTo(size.width * 0.6, size.height)
+          ..lineTo(size.width * 0.6, size.height * 0.6)
+          ..lineTo(0, size.height * 0.6)
+          ..close();
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.cross:
-  final path = Path()
-    ..addRect(Rect.fromLTWH(size.width * 0.4, 0, size.width * 0.2, size.height))
-    ..addRect(Rect.fromLTWH(0, size.height * 0.4, size.width, size.height * 0.2));
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.cross:
+        final path = Path()
+          ..addRect(
+            Rect.fromLTWH(size.width * 0.4, 0, size.width * 0.2, size.height),
+          )
+          ..addRect(
+            Rect.fromLTWH(0, size.height * 0.4, size.width, size.height * 0.2),
+          );
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.moon:
-  final path = Path()
-    ..addOval(Rect.fromLTWH(0, 0, size.width, size.height));
-  final cutout = Path()
-    ..addOval(Rect.fromLTWH(size.width * 0.3, 0, size.width, size.height));
-  path.addPath(cutout, Offset.zero);
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
+      case ShapeType.moon:
+        final path = Path()
+          ..addOval(Rect.fromLTWH(0, 0, size.width, size.height));
+        final cutout = Path()
+          ..addOval(
+            Rect.fromLTWH(size.width * 0.3, 0, size.width, size.height),
+          );
+        path.addPath(cutout, Offset.zero);
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
 
-case ShapeType.cloud:
-  final path = Path()
-    ..addOval(Rect.fromCircle(center: Offset(size.width * 0.3, size.height * 0.5), radius: size.width * 0.25))
-    ..addOval(Rect.fromCircle(center: Offset(size.width * 0.55, size.height * 0.35), radius: size.width * 0.3))
-    ..addOval(Rect.fromCircle(center: Offset(size.width * 0.75, size.height * 0.55), radius: size.width * 0.25))
-    ..addRect(Rect.fromLTWH(size.width * 0.25, size.height * 0.5, size.width * 0.55, size.height * 0.25));
-  canvas.drawPath(path, paint);
-  if (element.strokeWidth > 0) {
-    canvas.drawPath(path, strokePaint);
-  }
-  break;
-
+      case ShapeType.cloud:
+        final path = Path()
+          ..addOval(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.3, size.height * 0.5),
+              radius: size.width * 0.25,
+            ),
+          )
+          ..addOval(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.55, size.height * 0.35),
+              radius: size.width * 0.3,
+            ),
+          )
+          ..addOval(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.75, size.height * 0.55),
+              radius: size.width * 0.25,
+            ),
+          )
+          ..addRect(
+            Rect.fromLTWH(
+              size.width * 0.25,
+              size.height * 0.5,
+              size.width * 0.55,
+              size.height * 0.25,
+            ),
+          );
+        canvas.drawPath(path, paint);
+        if (element.strokeWidth > 0) {
+          canvas.drawPath(path, strokePaint);
+        }
+        break;
     }
   }
 
@@ -458,7 +461,7 @@ case ShapeType.cloud:
       final radius = i.isEven ? outerRadius : innerRadius;
       final x = center.dx + radius * math.cos(angle - 3.14159 / 2);
       final y = center.dy + radius * math.sin(angle - 3.14159 / 2);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
@@ -478,7 +481,7 @@ case ShapeType.cloud:
       final angle = (i * 2 * 3.14159) / sides;
       final x = center.dx + radius * math.cos(angle - 3.14159 / 2);
       final y = center.dy + radius * math.sin(angle - 3.14159 / 2);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
