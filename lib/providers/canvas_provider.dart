@@ -17,15 +17,19 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
   List<CanvasElement> _backElements = [];
   bool _isFrontSide = true; // true = front, false = back
 
-  // History management for undo/redo
-  List<CanvasState> _history = [];
-  int _historyIndex = -1;
+  // History management for undo/redo - separate history for each side
+  List<CanvasState> _frontHistory = [];
+  List<CanvasState> _backHistory = [];
+  int _frontHistoryIndex = -1;
+  int _backHistoryIndex = -1;
   static const int _maxHistorySize = 50;
   bool _isUndoRedoOperation = false;
 
   bool get isFrontSide => _isFrontSide;
-  bool get canUndo => _historyIndex > 0;
-  bool get canRedo => _historyIndex < _history.length - 1;
+  bool get canUndo => _isFrontSide ? _frontHistoryIndex > 0 : _backHistoryIndex > 0;
+  bool get canRedo => _isFrontSide 
+    ? _frontHistoryIndex < _frontHistory.length - 1 
+    : _backHistoryIndex < _backHistory.length - 1;
 
   /// Add a new element to the canvas
   void addElement(CanvasElement element) {
@@ -246,19 +250,35 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
       return;
     }
 
+    // Get current side's history and index
+    final history = _isFrontSide ? _frontHistory : _backHistory;
+    final historyIndex = _isFrontSide ? _frontHistoryIndex : _backHistoryIndex;
+
     // Remove any history after current index (when new action is performed after undo)
-    if (_historyIndex < _history.length - 1) {
-      _history = _history.sublist(0, _historyIndex + 1);
+    if (historyIndex < history.length - 1) {
+      if (_isFrontSide) {
+        _frontHistory = _frontHistory.sublist(0, _frontHistoryIndex + 1);
+      } else {
+        _backHistory = _backHistory.sublist(0, _backHistoryIndex + 1);
+      }
     }
 
-    // Add current state to history
-    _history.add(state);
-    _historyIndex = _history.length - 1;
+    // Add current state to appropriate history
+    if (_isFrontSide) {
+      _frontHistory.add(state);
+      _frontHistoryIndex = _frontHistory.length - 1;
+    } else {
+      _backHistory.add(state);
+      _backHistoryIndex = _backHistory.length - 1;
+    }
 
     // Keep history size manageable
-    if (_history.length > _maxHistorySize) {
-      _history.removeAt(0);
-      _historyIndex = _history.length - 1;
+    if (_isFrontSide && _frontHistory.length > _maxHistorySize) {
+      _frontHistory.removeAt(0);
+      _frontHistoryIndex = _frontHistory.length - 1;
+    } else if (!_isFrontSide && _backHistory.length > _maxHistorySize) {
+      _backHistory.removeAt(0);
+      _backHistoryIndex = _backHistory.length - 1;
     }
   }
 
@@ -267,8 +287,20 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     if (!canUndo) return;
 
     _isUndoRedoOperation = true;
-    _historyIndex--;
-    state = _history[_historyIndex];
+    
+    // Use appropriate history for current side
+    if (_isFrontSide) {
+      _frontHistoryIndex--;
+      state = _frontHistory[_frontHistoryIndex];
+      // Update front elements storage
+      _frontElements = List<CanvasElement>.from(state.elements);
+    } else {
+      _backHistoryIndex--;
+      state = _backHistory[_backHistoryIndex];
+      // Update back elements storage
+      _backElements = List<CanvasElement>.from(state.elements);
+    }
+    
     _isUndoRedoOperation = false;
     
     // Provide haptic feedback on mobile
@@ -282,8 +314,20 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
     if (!canRedo) return;
 
     _isUndoRedoOperation = true;
-    _historyIndex++;
-    state = _history[_historyIndex];
+    
+    // Use appropriate history for current side
+    if (_isFrontSide) {
+      _frontHistoryIndex++;
+      state = _frontHistory[_frontHistoryIndex];
+      // Update front elements storage
+      _frontElements = List<CanvasElement>.from(state.elements);
+    } else {
+      _backHistoryIndex++;
+      state = _backHistory[_backHistoryIndex];
+      // Update back elements storage
+      _backElements = List<CanvasElement>.from(state.elements);
+    }
+    
     _isUndoRedoOperation = false;
     
     // Provide haptic feedback on mobile
@@ -299,9 +343,13 @@ class CanvasNotifier extends StateNotifier<CanvasState> {
       zoom: state.zoom,
       panOffset: state.panOffset,
     );
-    // Clear side-specific storage as well
+    // Clear side-specific storage and history
     _frontElements = [];
     _backElements = [];
+    _frontHistory = [];
+    _backHistory = [];
+    _frontHistoryIndex = -1;
+    _backHistoryIndex = -1;
     _isFrontSide = true;
     _saveToHistory();
   }
