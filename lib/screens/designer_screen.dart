@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../widgets/canvas/canvas_widget.dart';
@@ -12,7 +13,8 @@ class DesignerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-       final isWideScreen = MediaQuery.of(context).size.width >= 1200; // wider breakpoint
+    final isWideScreen =
+        MediaQuery.of(context).size.width >= 1200; // wider breakpoint
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: _buildAppBar(context, ref),
@@ -20,24 +22,44 @@ class DesignerScreen extends ConsumerWidget {
       drawer: isWideScreen ? null : const ToolsPanel(),
       // 👇 right drawer for PropertiesPanel
       endDrawer: isWideScreen ? null : const PropertiesPanel(),
-      body: Row(
-        children: [
-          // 👇 Show ToolsPanel permanently only on wide screens
-          if (isWideScreen) const ToolsPanel(),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withOpacity(0.25),
+              Colors.blueGrey.withOpacity(0.15),
+            ],
+          ),
+        ),
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              color: Colors.white.withOpacity(0.1),
+              child: Row(
+                children: [
+                  // 👇 Show ToolsPanel permanently only on wide screens
+                  if (isWideScreen) const ToolsPanel(),
 
-          // Center canvas area
-          Expanded(
-            child: Column(
-              children: [
-                const CanvasToolbar(),
-                const Expanded(child: CanvasContainer()),
-              ],
+                  // Center canvas area
+                  Expanded(
+                    child: Column(
+                      children: [
+                        const CanvasToolbar(),
+                        const Expanded(child: CanvasContainer()),
+                      ],
+                    ),
+                  ),
+
+                  // 👇 Show PropertiesPanel permanently only on wide screens
+                  if (isWideScreen) const PropertiesPanel(),
+                ],
+              ),
             ),
           ),
-
-          // 👇 Show PropertiesPanel permanently only on wide screens
-          if (isWideScreen) const PropertiesPanel(),
-        ],
+        ),
       ),
     );
   }
@@ -46,11 +68,35 @@ class DesignerScreen extends ConsumerWidget {
     return AppBar(
       title: const Text(
         'ID Card Designer',
-        style: TextStyle(fontWeight: FontWeight.bold),
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
       ),
-      backgroundColor: Colors.white,
-      elevation: 1,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       centerTitle: false,
+      iconTheme: const IconThemeData(color: Colors.black87),
+      flexibleSpace: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF5E72E4).withOpacity(0.9), // main color
+                  const Color(0xFF8FA2F8).withOpacity(0.7), // lighter shade
+                  const Color(0xFF3D4CC7).withOpacity(0.5), // darker shade
+                ],
+              ),
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.blue.shade300.withOpacity(0.3),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
       leading: Builder(
         builder: (context) {
           return IconButton(
@@ -63,71 +109,85 @@ class DesignerScreen extends ConsumerWidget {
         // 👇 Button to open right-side PropertiesPanel drawer
         Builder(
           builder: (context) {
-            return IconButton(
-              icon: const Icon(Icons.tune), // or settings icon
-              tooltip: "Open Properties",
-              onPressed: () => Scaffold.of(context).openEndDrawer(),
+            return Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.2),
+              ),
+              margin: const EdgeInsets.all(4),
+              child: IconButton(
+                icon: const Icon(Icons.tune, color: Colors.black87),
+                tooltip: "Open Properties",
+                onPressed: () => Scaffold.of(context).openEndDrawer(),
+              ),
             );
           },
         ),
 
-        PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          tooltip: 'More options',
-          onSelected: (value) => _handleMenuAction(context, ref, value),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'new',
-              child: ListTile(
-                leading: Icon(Icons.add),
-                title: Text('New Design'),
-                contentPadding: EdgeInsets.zero,
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+          ),
+          margin: const EdgeInsets.all(4),
+          child: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            tooltip: 'More options',
+            onSelected: (value) => _handleMenuAction(context, ref, value),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'new',
+                child: ListTile(
+                  leading: Icon(Icons.add),
+                  title: Text('New Design'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'save',
-              child: ListTile(
-                leading: Icon(Icons.save),
-                title: Text('Save Design'),
-                contentPadding: EdgeInsets.zero,
+              const PopupMenuItem(
+                value: 'save',
+                child: ListTile(
+                  leading: Icon(Icons.save),
+                  title: Text('Save Design'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'load',
-              child: ListTile(
-                leading: Icon(Icons.folder_open),
-                title: Text('Load Design'),
-                contentPadding: EdgeInsets.zero,
+              const PopupMenuItem(
+                value: 'load',
+                child: ListTile(
+                  leading: Icon(Icons.folder_open),
+                  title: Text('Load Design'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
-            ),
-            const PopupMenuDivider(),
-            const PopupMenuItem(
-              value: 'export_png',
-              child: ListTile(
-                leading: Icon(Icons.image),
-                title: Text('Export as PNG'),
-                contentPadding: EdgeInsets.zero,
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'export_png',
+                child: ListTile(
+                  leading: Icon(Icons.image),
+                  title: Text('Export as PNG'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'export_pdf',
-              child: ListTile(
-                leading: Icon(Icons.picture_as_pdf),
-                title: Text('Export as PDF'),
-                contentPadding: EdgeInsets.zero,
+              const PopupMenuItem(
+                value: 'export_pdf',
+                child: ListTile(
+                  leading: Icon(Icons.picture_as_pdf),
+                  title: Text('Export as PDF'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
-            ),
-            const PopupMenuItem(
-              value: 'send_to_backend',
-              child: ListTile(
-                leading: Icon(Icons.cloud_upload),
-                title: Text('Send to Backend'),
-                contentPadding: EdgeInsets.zero,
+              const PopupMenuItem(
+                value: 'send_to_backend',
+                child: ListTile(
+                  leading: Icon(Icons.cloud_upload),
+                  title: Text('Send to Backend'),
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
       ],
     );
   }
@@ -158,90 +218,176 @@ class DesignerScreen extends ConsumerWidget {
     }
   }
 
-  void _showNewDesignDialog(BuildContext context, CanvasNotifier canvasNotifier) {
+  void _showNewDesignDialog(
+    BuildContext context,
+    CanvasNotifier canvasNotifier,
+  ) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('New Design'),
-        content: const Text('Are you sure you want to create a new design? All unsaved changes will be lost.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'New Design',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Are you sure you want to create a new design? All unsaved changes will be lost.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        canvasNotifier.clearCanvas();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('New design created')),
+                        );
+                      },
+                      child: const Text('Create New'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              canvasNotifier.clearCanvas();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('New design created')),
-              );
-            },
-            child: const Text('Create New'),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   void _saveDesign(BuildContext context, CanvasNotifier canvasNotifier) {
-    // In a real app, you'd show a dialog to get the filename
-    // and save to local storage or cloud storage
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Save Design'),
-        content: const Text('Design saved successfully!\n\nIn a real app, this would save your design to local storage or the cloud.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Save Design',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Design saved successfully!\n\nIn a real app, this would save your design to local storage or the cloud.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   void _loadDesign(BuildContext context, CanvasNotifier canvasNotifier) {
-    // In a real app, you'd show a file picker or list of saved designs
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Load Design'),
-        content: const Text('Load design feature coming soon!\n\nThis would show a list of your saved designs to choose from.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Load Design',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Load design feature coming soon!\n\nThis would show a list of your saved designs to choose from.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
 
   void _exportAsPNG(BuildContext context, canvasState) async {
     try {
-      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Exporting as PNG...'),
-            ],
+        builder: (context) => Dialog(
+          backgroundColor: Colors.white.withOpacity(0.9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Exporting as PNG...'),
+                ],
+              ),
+            ),
           ),
         ),
       );
 
-      // Export using ExportService
       final exportService = ExportService();
       final success = await exportService.exportAsPNG(canvasState);
 
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -254,7 +400,7 @@ class DesignerScreen extends ConsumerWidget {
         throw Exception('Export failed');
       }
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog if still open
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Export failed: ${e.toString()}'),
@@ -266,27 +412,35 @@ class DesignerScreen extends ConsumerWidget {
 
   void _exportAsPDF(BuildContext context, canvasState) async {
     try {
-      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Exporting as PDF...'),
-            ],
+        builder: (context) => Dialog(
+          backgroundColor: Colors.white.withOpacity(0.9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Exporting as PDF...'),
+                ],
+              ),
+            ),
           ),
         ),
       );
 
-      // Export using ExportService
       final exportService = ExportService();
       final success = await exportService.exportAsPDF(canvasState);
 
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -299,7 +453,7 @@ class DesignerScreen extends ConsumerWidget {
         throw Exception('Export failed');
       }
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog if still open
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Export failed: ${e.toString()}'),
@@ -311,27 +465,35 @@ class DesignerScreen extends ConsumerWidget {
 
   void _sendToBackend(BuildContext context, canvasState) async {
     try {
-      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Sending to backend...'),
-            ],
+        builder: (context) => Dialog(
+          backgroundColor: Colors.white.withOpacity(0.9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Sending to backend...'),
+                ],
+              ),
+            ),
           ),
         ),
       );
 
-      // Send using ExportService
       final exportService = ExportService();
       final success = await exportService.sendToBackend(canvasState);
 
-      Navigator.pop(context); // Close loading dialog
+      Navigator.pop(context);
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -344,7 +506,7 @@ class DesignerScreen extends ConsumerWidget {
         throw Exception('Send to backend failed');
       }
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog if still open
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send to backend: ${e.toString()}'),
@@ -365,97 +527,135 @@ class WelcomeScreen extends ConsumerWidget {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // App logo/icon
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Icon(
-                          Icons.badge,
-                          size: 60,
-                          color: Colors.white,
-                        ),
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.25),
+                  Colors.blueGrey.withOpacity(0.15),
+                ],
+              ),
+            ),
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  color: Colors.white.withOpacity(0.1),
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // App logo/icon
+                              Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF5E72E4),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.badge,
+                                  size: 60,
+                                  color: Colors.white,
+                                ),
+                              ),
 
-                      const SizedBox(height: 32),
+                              const SizedBox(height: 32),
 
-                      // App title
-                      const Text(
-                        'ID Card Designer',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
+                              // App title
+                              const Text(
+                                'ID Card Designer',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
 
-                      const SizedBox(height: 16),
+                              const SizedBox(height: 16),
 
-                      // App description
-                      const Text(
-                        'Create professional ID cards with ease.\nDesign, customize, and export your cards.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                          height: 1.5,
-                        ),
-                      ),
+                              // App description
+                              const Text(
+                                'Create professional ID cards with ease.\nDesign, customize, and export your cards.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                  height: 1.5,
+                                ),
+                              ),
 
-                      const SizedBox(height: 48),
+                              const SizedBox(height: 48),
 
-                      // Quick start options
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        alignment: WrapAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) =>
-                                        const DesignerScreen()),
-                              );
-                            },
-                            icon: const Icon(Icons.add),
-                            label: const Text('Start Designing'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 16),
-                              textStyle: const TextStyle(fontSize: 16),
-                            ),
+                              // Quick start options
+                              Wrap(
+                                spacing: 16,
+                                runSpacing: 16,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const DesignerScreen(),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Start Designing'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF5E72E4),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 16,
+                                      ),
+                                      textStyle: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      _showTemplatesDialog(context);
+                                    },
+                                    icon: const Icon(Icons.dashboard),
+                                    label: const Text('Browse Templates'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 16,
+                                      ),
+                                      textStyle: const TextStyle(fontSize: 16),
+                                      side: const BorderSide(
+                                        color: Color(0xFF5E72E4),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              // Show templates dialog
-                              _showTemplatesDialog(context);
-                            },
-                            icon: const Icon(Icons.dashboard),
-                            label: const Text('Browse Templates'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 16),
-                              textStyle: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -469,49 +669,64 @@ class WelcomeScreen extends ConsumerWidget {
   void _showTemplatesDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Templates'),
-        content: const SizedBox(
-          width: 400,
-          height: 300,
-          child: Center(
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white.withOpacity(0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.dashboard_outlined, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
+                const Icon(
+                  Icons.dashboard_outlined,
+                  size: 64,
+                  color: Colors.grey,
+                ),
+                const SizedBox(height: 16),
                 Text(
                   'Templates Coming Soon!',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   'We\'re working on creating beautiful templates for you.\nFor now, start with a blank canvas.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DesignerScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text('Start Designing'),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const DesignerScreen()),
-              );
-            },
-            child: const Text('Start Designing'),
-          ),
-        ],
       ),
     );
   }
 }
-

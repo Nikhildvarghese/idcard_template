@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/canvas_element.dart';
@@ -17,6 +18,14 @@ class CanvasWidget extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF5E72E4).withOpacity(0.25),
+            const Color(0xFF8FA2F8).withOpacity(0.15),
+          ],
+        ),
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
@@ -27,82 +36,94 @@ class CanvasWidget extends ConsumerWidget {
         ],
       ),
       child: ClipRect(
-        child: Transform(
-          alignment: Alignment.topLeft,
-          transform: Matrix4.identity()
-            ..scale(canvasState.zoom)
-            ..translate(canvasState.panOffset.dx, canvasState.panOffset.dy),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
-            width: canvasState.canvasSize.width,
-            height: canvasState.canvasSize.height,
-            child: GestureDetector(
-              onTapDown: (details) {
-                final localPosition = details.localPosition;
-                canvasNotifier.handleCanvasTap(localPosition);
-              },
-              onDoubleTap: () {
-                // Handle double tap separately since we need to track the position
-              },
-              onDoubleTapDown: (details) {
-                final localPosition = details.localPosition;
-                canvasNotifier.handleCanvasDoubleTap(localPosition);
-              },
-              onPanStart: (details) {
-                final localPosition = details.localPosition;
-                canvasNotifier.handlePanStart(localPosition);
-              },
-              onPanUpdate: (details) {
-                canvasNotifier.handlePanUpdate(details.delta);
-              },
-              onPanEnd: (details) {
-                canvasNotifier.handlePanEnd();
-              },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Canvas background
-                  CanvasBackground(
-                    size: canvasState.canvasSize,
-                    backgroundColor: canvasState.backgroundColor,
-                    backgroundImagePath: canvasState.backgroundImagePath,
-                    backgroundImageUrl: canvasState.backgroundImageUrl,
-                    showGrid: canvasState.isGridVisible,
-                    gridSize: canvasState.gridSize,
-                  ),
-                  
-                  // Render all canvas elements
-                  ...canvasState.sortedElements.map((element) => 
-                    Positioned(
-                      left: element.position.dx,
-                      top: element.position.dy,
-                      child: Transform.rotate(
-                        angle: element.rotation,
-                        child: Opacity(
-                          opacity: element.opacity,
-                          child: ElementRenderer(element: element),
-                        ),
+            color: Colors.white.withOpacity(0.1),
+            child: Transform(
+              alignment: Alignment.topLeft,
+              transform: Matrix4.identity()
+                ..scale(canvasState.zoom)
+                ..translate(canvasState.panOffset.dx, canvasState.panOffset.dy),
+              child: Container(
+                width: canvasState.canvasSize.width,
+                height: canvasState.canvasSize.height,
+                child: GestureDetector(
+                  onTapDown: (details) {
+                    final localPosition = details.localPosition;
+                    canvasNotifier.handleCanvasTap(localPosition);
+                  },
+                  onDoubleTap: () {
+                    // Handle double tap separately since we need to track the position
+                  },
+                  onDoubleTapDown: (details) {
+                    final localPosition = details.localPosition;
+                    canvasNotifier.handleCanvasDoubleTap(localPosition);
+                  },
+                  onPanStart: (details) {
+                    final localPosition = details.localPosition;
+                    canvasNotifier.handlePanStart(localPosition);
+                  },
+                  onPanUpdate: (details) {
+                    canvasNotifier.handlePanUpdate(details.delta);
+                  },
+                  onPanEnd: (details) {
+                    canvasNotifier.handlePanEnd();
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Canvas background
+                      CanvasBackground(
+                        size: canvasState.canvasSize,
+                        backgroundColor: canvasState.backgroundColor,
+                        backgroundImagePath: canvasState.backgroundImagePath,
+                        backgroundImageUrl: canvasState.backgroundImageUrl,
+                        showGrid: canvasState.isGridVisible,
+                        gridSize: canvasState.gridSize,
                       ),
-                    ),
-                  ).toList(),
-                  
-                  // Selection handles for selected element
-                  if (canvasState.selectedElementId != null) ...[
-                    _buildSelectionHandles(canvasState, canvasNotifier),
-                  ],
-                  
-                  // Multi-selection handles
-                  ...canvasState.multiSelectedElementIds.map((elementId) {
-                    try {
-                      final element = canvasState.elements.firstWhere(
-                        (e) => e.id == elementId,
-                      );
-                      return _buildSelectionHandles(canvasState, canvasNotifier, element);
-                    } catch (e) {
-                      // Element not found, return empty widget
-                      return const SizedBox.shrink();
-                    }
-                  }).toList(),
-                ],
+
+                      // Render all canvas elements
+                      ...canvasState.sortedElements
+                          .map(
+                            (element) => Positioned(
+                              left: element.position.dx,
+                              top: element.position.dy,
+                              child: Transform.rotate(
+                                angle: element.rotation,
+                                child: Opacity(
+                                  opacity: element.opacity,
+                                  child: ElementRenderer(element: element),
+                                ),
+                              ),
+                            ),
+                          )
+                          .toList(),
+
+                      // Selection handles for selected element
+                      if (canvasState.selectedElementId != null) ...[
+                        _buildSelectionHandles(canvasState, canvasNotifier),
+                      ],
+
+                      // Multi-selection handles
+                      ...canvasState.multiSelectedElementIds.map((elementId) {
+                        try {
+                          final element = canvasState.elements.firstWhere(
+                            (e) => e.id == elementId,
+                          );
+                          return _buildSelectionHandles(
+                            canvasState,
+                            canvasNotifier,
+                            element,
+                          );
+                        } catch (e) {
+                          // Element not found, return empty widget
+                          return const SizedBox.shrink();
+                        }
+                      }).toList(),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -112,12 +133,12 @@ class CanvasWidget extends ConsumerWidget {
   }
 
   Widget _buildSelectionHandles(
-    canvasState, 
-    canvasNotifier, 
-    [CanvasElement? specificElement]
-  ) {
+    canvasState,
+    canvasNotifier, [
+    CanvasElement? specificElement,
+  ]) {
     CanvasElement? element = specificElement;
-    
+
     if (element == null && canvasState.selectedElementId != null) {
       try {
         element = canvasState.elements.firstWhere(
@@ -128,7 +149,7 @@ class CanvasWidget extends ConsumerWidget {
         element = null;
       }
     }
-    
+
     if (element == null) {
       return const SizedBox.shrink();
     }
@@ -167,17 +188,32 @@ class CanvasContainer extends ConsumerWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.grey.shade100,
-      child: InteractiveViewer(
-        boundaryMargin: const EdgeInsets.all(100),
-        minScale: 0.1,
-        maxScale: 5.0,
-        onInteractionUpdate: (details) {
-          // Update canvas zoom and pan state
-          canvasNotifier.setZoom(details.scale);
-        },
-        child: Center(
-          child: CanvasWidget(),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.25),
+            Colors.blueGrey.withOpacity(0.15),
+          ],
+        ),
+      ),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.white.withOpacity(0.1),
+            child: InteractiveViewer(
+              boundaryMargin: const EdgeInsets.all(100),
+              minScale: 0.1,
+              maxScale: 5.0,
+              onInteractionUpdate: (details) {
+                // Update canvas zoom and pan state
+                canvasNotifier.setZoom(details.scale);
+              },
+              child: Center(child: CanvasWidget()),
+            ),
+          ),
         ),
       ),
     );
@@ -201,132 +237,255 @@ class CanvasToolbar extends ConsumerWidget {
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.25),
+            Colors.blueGrey.withOpacity(0.15),
+          ],
+        ),
         border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
       ),
-      child: SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: IntrinsicWidth( // ✅ fixes "not laid out" error
-    child: Row(
-        children: [
-          // Undo/Redo buttons
-          IconButton(
-            icon: Icon(
-              Icons.undo,
-              color: canUndo ? null : Colors.grey.shade400,
-            ),
-            onPressed: canUndo ? () => canvasNotifier.undo() : null,
-            tooltip: 'Undo',
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.redo,
-              color: canRedo ? null : Colors.grey.shade400,
-            ),
-            onPressed: canRedo ? () => canvasNotifier.redo() : null,
-            tooltip: 'Redo',
-          ),
-          
-          const VerticalDivider(),
-          
-          // Element actions (only show when element is selected)
-          if (selectedElement != null) ...[
-            IconButton(
-              icon: const Icon(Icons.content_copy),
-              onPressed: () => canvasNotifier.duplicateSelectedElement(),
-              tooltip: 'Duplicate',
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () => canvasNotifier.removeElement(selectedElement.id),
-              tooltip: 'Delete',
-            ),
-            
-            const VerticalDivider(),
-            
-            // Layer actions
-            IconButton(
-              icon: const Icon(Icons.flip_to_front),
-              onPressed: () => canvasNotifier.bringToFront(selectedElement.id),
-              tooltip: 'Bring to Front',
-            ),
-            IconButton(
-              icon: const Icon(Icons.flip_to_back),
-              onPressed: () => canvasNotifier.sendToBack(selectedElement.id),
-              tooltip: 'Send to Back',
-            ),
-          ],
-          
-          const Spacer(),
-          
-          // Zoom controls
-          Text('${(canvasState.zoom * 100).toStringAsFixed(0)}%'),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.zoom_out),
-            onPressed: () => canvasNotifier.setZoom(canvasState.zoom * 0.8),
-            tooltip: 'Zoom Out',
-          ),
-          IconButton(
-            icon: const Icon(Icons.zoom_in),
-            onPressed: () => canvasNotifier.setZoom(canvasState.zoom * 1.25),
-            tooltip: 'Zoom In',
-          ),
-          
-          const VerticalDivider(),
-          
-          // Grid toggle
-          IconButton(
-            icon: Icon(
-              Icons.grid_4x4,
-              color: canvasState.isGridVisible ? Colors.blue : null,
-            ),
-            onPressed: () => canvasNotifier.toggleGrid(),
-            tooltip: 'Toggle Grid',
-          ),
-          
-          // Snap to grid toggle
-          IconButton(
-            icon: Icon(
-              Icons.dashboard,
-              color: canvasState.isSnapToGrid ? Colors.blue : null,
-            ),
-            onPressed: () => canvasNotifier.toggleSnapToGrid(),
-            tooltip: 'Snap to Grid',
-          ),
-          
-          const VerticalDivider(),
-          
-          // ID Card Front/Back toggle
-          Container(
-            height: 32,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.grey.shade100,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildSideButton(
-                  label: 'Front',
-                  icon: Icons.credit_card,
-                  isSelected: isFrontSide,
-                  onPressed: () => canvasNotifier.goToFrontSide(),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            color: Colors.white.withOpacity(0.1),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: IntrinsicWidth(
+                child: Row(
+                  children: [
+                    // Undo/Redo buttons
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      margin: const EdgeInsets.all(4),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.undo,
+                          color: canUndo
+                              ? Colors.black87
+                              : Colors.grey.shade400,
+                        ),
+                        onPressed: canUndo ? () => canvasNotifier.undo() : null,
+                        tooltip: 'Undo',
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      margin: const EdgeInsets.all(4),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.redo,
+                          color: canRedo
+                              ? Colors.black87
+                              : Colors.grey.shade400,
+                        ),
+                        onPressed: canRedo ? () => canvasNotifier.redo() : null,
+                        tooltip: 'Redo',
+                      ),
+                    ),
+
+                    const VerticalDivider(),
+
+                    // Element actions (only show when element is selected)
+                    if (selectedElement != null) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        margin: const EdgeInsets.all(4),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.content_copy,
+                            color: Colors.black87,
+                          ),
+                          onPressed: () =>
+                              canvasNotifier.duplicateSelectedElement(),
+                          tooltip: 'Duplicate',
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        margin: const EdgeInsets.all(4),
+                        child: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.black87),
+                          onPressed: () =>
+                              canvasNotifier.removeElement(selectedElement.id),
+                          tooltip: 'Delete',
+                        ),
+                      ),
+
+                      const VerticalDivider(),
+
+                      // Layer actions
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        margin: const EdgeInsets.all(4),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.flip_to_front,
+                            color: Colors.black87,
+                          ),
+                          onPressed: () =>
+                              canvasNotifier.bringToFront(selectedElement.id),
+                          tooltip: 'Bring to Front',
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                        margin: const EdgeInsets.all(4),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.flip_to_back,
+                            color: Colors.black87,
+                          ),
+                          onPressed: () =>
+                              canvasNotifier.sendToBack(selectedElement.id),
+                          tooltip: 'Send to Back',
+                        ),
+                      ),
+                    ],
+
+                    const Spacer(),
+
+                    // Zoom controls
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${(canvasState.zoom * 100).toStringAsFixed(0)}%',
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      margin: const EdgeInsets.all(4),
+                      child: IconButton(
+                        icon: const Icon(Icons.zoom_out, color: Colors.black87),
+                        onPressed: () =>
+                            canvasNotifier.setZoom(canvasState.zoom * 0.8),
+                        tooltip: 'Zoom Out',
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      margin: const EdgeInsets.all(4),
+                      child: IconButton(
+                        icon: const Icon(Icons.zoom_in, color: Colors.black87),
+                        onPressed: () =>
+                            canvasNotifier.setZoom(canvasState.zoom * 1.25),
+                        tooltip: 'Zoom In',
+                      ),
+                    ),
+
+                    const VerticalDivider(),
+
+                    // Grid toggle
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      margin: const EdgeInsets.all(4),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.grid_4x4,
+                          color: canvasState.isGridVisible
+                              ? const Color(0xFF5E72E4)
+                              : Colors.black87,
+                        ),
+                        onPressed: () => canvasNotifier.toggleGrid(),
+                        tooltip: 'Toggle Grid',
+                      ),
+                    ),
+
+                    // Snap to grid toggle
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                      margin: const EdgeInsets.all(4),
+                      child: IconButton(
+                        icon: Icon(
+                          Icons.dashboard,
+                          color: canvasState.isSnapToGrid
+                              ? const Color(0xFF5E72E4)
+                              : Colors.black87,
+                        ),
+                        onPressed: () => canvasNotifier.toggleSnapToGrid(),
+                        tooltip: 'Snap to Grid',
+                      ),
+                    ),
+
+                    const VerticalDivider(),
+
+                    // ID Card Front/Back toggle
+                    Container(
+                      height: 32,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white.withOpacity(0.4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildSideButton(
+                            label: 'Front',
+                            icon: Icons.credit_card,
+                            isSelected: isFrontSide,
+                            onPressed: () => canvasNotifier.goToFrontSide(),
+                          ),
+                          _buildSideButton(
+                            label: 'Back',
+                            icon: Icons.flip,
+                            isSelected: !isFrontSide,
+                            onPressed: () => canvasNotifier.goToBackSide(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                _buildSideButton(
-                  label: 'Back',
-                  icon: Icons.flip,
-                  isSelected: !isFrontSide,
-                  onPressed: () => canvasNotifier.goToBackSide(),
-                ),
-              ],
+              ),
             ),
           ),
-        ],
-      ),),),
+        ),
+      ),
     );
   }
-  
+
   /// Build a side toggle button (Front/Back)
   Widget _buildSideButton({
     required String label,
@@ -340,7 +499,7 @@ class CanvasToolbar extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: isSelected ? Colors.blue : Colors.transparent,
+          color: isSelected ? const Color(0xFF5E72E4) : Colors.transparent,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -348,7 +507,7 @@ class CanvasToolbar extends ConsumerWidget {
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : Colors.grey.shade600,
+              color: isSelected ? Colors.white : Colors.black87,
             ),
             const SizedBox(width: 4),
             Text(
@@ -356,7 +515,7 @@ class CanvasToolbar extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : Colors.grey.shade600,
+                color: isSelected ? Colors.white : Colors.black87,
               ),
             ),
           ],

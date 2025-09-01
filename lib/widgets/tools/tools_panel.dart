@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,117 +14,257 @@ class ToolsPanel extends ConsumerWidget {
     return Container(
       width: 280,
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF5E72E4).withOpacity(0.25),
+            const Color(0xFF8FA2F8).withOpacity(0.15),
+          ],
+        ),
         border: Border(right: BorderSide(color: Colors.grey.shade300)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(2, 0),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 12,
+            offset: const Offset(-4, 0),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Tools header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: const Text(
-              'Design Tools',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            color: Colors.white.withOpacity(0.1),
+            child: SafeArea(
+              // ensures header isn't stuck at the very top
+              child: Column(
+                children: [
+                  // Tools header
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.7),
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.grey.shade300.withOpacity(0.5),
+                        ),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.design_services,
+                          color: Colors.black87,
+                          size: 22,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Design Tools',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Tools list
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        _buildToolCategory('Text', Icons.text_fields, [
+                          _ToolItem(
+                            'Add Text',
+                            Icons.title,
+                            () => _addText(ref),
+                          ),
+                          _ToolItem(
+                            'Add Heading',
+                            Icons.text_increase,
+                            () => _addHeading(ref),
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        _buildToolCategory('Elements', Icons.category, [
+                          _ToolItem(
+                            'Rectangle',
+                            Icons.crop_square,
+                            () => _addRectangle(ref),
+                          ),
+                          _ToolItem(
+                            'Circle',
+                            Icons.circle_outlined,
+                            () => _addCircle(ref),
+                          ),
+                          _ToolItem(
+                            'Triangle',
+                            Icons.change_history,
+                            () => _addTriangle(ref),
+                          ),
+                          _ToolItem(
+                            'Star',
+                            Icons.star_outline,
+                            () => _addStar(ref),
+                          ),
+                          _ToolItem(
+                            'Line',
+                            Icons.horizontal_rule,
+                            () => _addLine(ref),
+                          ),
+                          _ToolItem(
+                            'Diamond',
+                            Icons.diamond_outlined,
+                            () => _addDiamond(ref),
+                          ),
+                          _ToolItem(
+                            'Hexagon',
+                            Icons.hexagon_outlined,
+                            () => _addHexagon(ref),
+                          ),
+                          _ToolItem(
+                            'Heart',
+                            Icons.favorite_border,
+                            () => _addHeart(ref),
+                          ),
+                          _ToolItem(
+                            'Pentagon',
+                            Icons.pentagon_outlined,
+                            () => _addPentagon(ref),
+                          ),
+                          _ToolItem(
+                            'Octagon',
+                            Icons.on_device_training_outlined,
+                            () => _addOctagon(ref),
+                          ),
+                          _ToolItem(
+                            'Parallelogram',
+                            Icons.square_outlined,
+                            () => _addParallelogram(ref),
+                          ),
+                          _ToolItem(
+                            'Trapezoid',
+                            Icons.crop_landscape_outlined,
+                            () => _addTrapezoid(ref),
+                          ),
+                          _ToolItem(
+                            'Arrow',
+                            Icons.arrow_right_alt_outlined,
+                            () => _addArrow(ref),
+                          ),
+                          _ToolItem('Cross', Icons.close, () => _addCross(ref)),
+                          _ToolItem(
+                            'Moon',
+                            Icons.dark_mode_outlined,
+                            () => _addMoon(ref),
+                          ),
+                          _ToolItem(
+                            'Cloud',
+                            Icons.cloud_outlined,
+                            () => _addCloud(ref),
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        _buildToolCategory('Media', Icons.image, [
+                          _ToolItem(
+                            'Upload Image',
+                            Icons.upload,
+                            () => _uploadImage(ref),
+                          ),
+                          _ToolItem(
+                            'Stock Photos',
+                            Icons.photo_library,
+                            () => _showStockPhotos(context),
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        _buildToolCategory('Background', Icons.wallpaper, [
+                          _ToolItem(
+                            'Solid Color',
+                            Icons.palette,
+                            () => _showColorPicker(context, ref),
+                          ),
+                          _ToolItem(
+                            'Background Image',
+                            Icons.image,
+                            () => _uploadBackgroundImage(ref),
+                          ),
+                        ]),
+
+                        const SizedBox(height: 24),
+
+                        _buildToolCategory('Templates', Icons.dashboard, [
+                          _ToolItem(
+                            'ID Card Templates',
+                            Icons.badge,
+                            () => _showTemplates(context, ref),
+                          ),
+                          _ToolItem(
+                            'Business Cards',
+                            Icons.credit_card,
+                            () => _showBusinessCardTemplates(context, ref),
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          
-          // Tools list
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildToolCategory('Text', Icons.text_fields, [
-                  _ToolItem('Add Text', Icons.title, () => _addText(ref)),
-                  _ToolItem('Add Heading', Icons.text_increase, () => _addHeading(ref)),
-                ]),
-                
-                const SizedBox(height: 16),
-                
-                _buildToolCategory('Elements', Icons.category, [
-                  _ToolItem('Rectangle', Icons.crop_square, () => _addRectangle(ref)),
-                  _ToolItem('Circle', Icons.circle_outlined, () => _addCircle(ref)),
-                  _ToolItem('Triangle', Icons.change_history, () => _addTriangle(ref)),
-                  _ToolItem('Star', Icons.star_outline, () => _addStar(ref)),
-                  _ToolItem('Line', Icons.horizontal_rule, () => _addLine(ref)),
-                  _ToolItem('Diamond', Icons.diamond_outlined, () => _addDiamond(ref)),
-                  _ToolItem('Hexagon', Icons.hexagon_outlined, () => _addHexagon(ref)),
-                  _ToolItem('Heart', Icons.favorite_border, () => _addHeart(ref)),
-                  _ToolItem('Pentagon', Icons.pentagon_outlined, () => _addPentagon(ref)),
-                  _ToolItem('Octagon', Icons.on_device_training_outlined, () => _addOctagon(ref)),
-
-                  _ToolItem('Parallelogram', Icons.square_outlined, () => _addParallelogram(ref)),
-                  _ToolItem('Trapezoid', Icons.crop_landscape_outlined, () => _addTrapezoid(ref)),
-                  _ToolItem('Arrow', Icons.arrow_right_alt_outlined, () => _addArrow(ref)),
-                  _ToolItem('Cross', Icons.close, () => _addCross(ref)),
-                  _ToolItem('Moon', Icons.dark_mode_outlined, () => _addMoon(ref)),
-                  _ToolItem('Cloud', Icons.cloud_outlined, () => _addCloud(ref)),
-
-                ]),
-                
-                const SizedBox(height: 16),
-                
-                _buildToolCategory('Media', Icons.image, [
-                  _ToolItem('Upload Image', Icons.upload, () => _uploadImage(ref)),
-                  _ToolItem('Stock Photos', Icons.photo_library, () => _showStockPhotos(context)),
-                ]),
-                
-                const SizedBox(height: 16),
-                
-                _buildToolCategory('Background', Icons.wallpaper, [
-                  _ToolItem('Solid Color', Icons.palette, () => _showColorPicker(context, ref)),
-                  _ToolItem('Background Image', Icons.image, () => _uploadBackgroundImage(ref)),
-                ]),
-                
-                const SizedBox(height: 16),
-                
-                _buildToolCategory('Templates', Icons.dashboard, [
-                  _ToolItem('ID Card Templates', Icons.badge, () => _showTemplates(context, ref)),
-                  _ToolItem('Business Cards', Icons.credit_card, () => _showBusinessCardTemplates(context, ref)),
-                ]),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildToolCategory(String title, IconData icon, List<_ToolItem> items) {
+  Widget _buildToolCategory(
+    String title,
+    IconData icon,
+    List<_ToolItem> items,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, size: 20, color: Colors.grey.shade700),
+            Icon(icon, size: 20, color: Colors.black87.withOpacity(0.8)),
             const SizedBox(width: 8),
             Text(
               title,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+                color: Colors.black87.withOpacity(0.85),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        ...items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildToolButton(item),
-            )),
+        ...items.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _buildToolButton(item),
+          ),
+        ),
       ],
     );
   }
@@ -133,23 +274,30 @@ class ToolsPanel extends ConsumerWidget {
       width: double.infinity,
       child: TextButton.icon(
         onPressed: item.onTap,
-        icon: Icon(item.icon, size: 20),
+        icon: Icon(item.icon, size: 20, color: Colors.black87),
         label: Align(
           alignment: Alignment.centerLeft,
-          child: Text(item.title),
+          child: Text(
+            item.title,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
         style: TextButton.styleFrom(
           alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
+          backgroundColor: Colors.white.withOpacity(0.4),
         ),
       ),
     );
   }
 
-  // Tool actions
+  // Tool actions (unchanged)
   void _addText(WidgetRef ref) {
     final canvasNotifier = ref.read(canvasProvider.notifier);
     canvasNotifier.addTextElement(
@@ -218,35 +366,37 @@ class ToolsPanel extends ConsumerWidget {
       strokeWidth: 2,
     );
   }
+
   void _addDiamond(WidgetRef ref) {
-  final canvasNotifier = ref.read(canvasProvider.notifier);
-  canvasNotifier.addShapeElement(
-    shapeType: ShapeType.diamond,
-    position: const Offset(150, 150),
-    size: const Size(80, 80),
-    fillColor: Colors.purple,
-  );
-}
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.diamond,
+      position: const Offset(150, 150),
+      size: const Size(80, 80),
+      fillColor: Colors.purple,
+    );
+  }
 
-void _addHexagon(WidgetRef ref) {
-  final canvasNotifier = ref.read(canvasProvider.notifier);
-  canvasNotifier.addShapeElement(
-    shapeType: ShapeType.hexagon,
-    position: const Offset(150, 150),
-    size: const Size(100, 100),
-    fillColor: Colors.teal,
-  );
-}
+  void _addHexagon(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.hexagon,
+      position: const Offset(150, 150),
+      size: const Size(100, 100),
+      fillColor: Colors.teal,
+    );
+  }
 
-void _addHeart(WidgetRef ref) {
-  final canvasNotifier = ref.read(canvasProvider.notifier);
-  canvasNotifier.addShapeElement(
-    shapeType: ShapeType.heart,
-    position: const Offset(150, 150),
-    size: const Size(90, 90),
-    fillColor: Colors.red,
-  );
-}
+  void _addHeart(WidgetRef ref) {
+    final canvasNotifier = ref.read(canvasProvider.notifier);
+    canvasNotifier.addShapeElement(
+      shapeType: ShapeType.heart,
+      position: const Offset(150, 150),
+      size: const Size(90, 90),
+      fillColor: Colors.red,
+    );
+  }
+
   void _addPentagon(WidgetRef ref) {
     final canvasNotifier = ref.read(canvasProvider.notifier);
     canvasNotifier.addShapeElement(
@@ -327,11 +477,9 @@ void _addHeart(WidgetRef ref) {
     );
   }
 
-
   void _uploadImage(WidgetRef ref) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
     if (pickedFile != null) {
       final canvasNotifier = ref.read(canvasProvider.notifier);
       canvasNotifier.addImageElement(
@@ -345,7 +493,6 @@ void _addHeart(WidgetRef ref) {
   void _uploadBackgroundImage(WidgetRef ref) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
     if (pickedFile != null) {
       final canvasNotifier = ref.read(canvasProvider.notifier);
       canvasNotifier.setBackgroundImage(imagePath: pickedFile.path);
@@ -376,7 +523,6 @@ void _addHeart(WidgetRef ref) {
       context: context,
       builder: (context) => TemplatesDialog(
         onTemplateSelected: (template) {
-          // Load template into canvas
           final canvasNotifier = ref.read(canvasProvider.notifier);
           canvasNotifier.loadCanvasFromJson(template);
         },
@@ -401,14 +547,12 @@ class _ToolItem {
   final String title;
   final IconData icon;
   final VoidCallback onTap;
-
   _ToolItem(this.title, this.icon, this.onTap);
 }
 
 /// Color picker dialog
 class ColorPickerDialog extends StatelessWidget {
   final Function(Color) onColorSelected;
-
   const ColorPickerDialog({super.key, required this.onColorSelected});
 
   @override
@@ -471,7 +615,6 @@ class ColorPickerDialog extends StatelessWidget {
 /// Stock photos dialog
 class StockPhotosDialog extends StatelessWidget {
   const StockPhotosDialog({super.key});
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -499,9 +642,7 @@ class StockPhotosDialog extends StatelessWidget {
 /// Templates dialog
 class TemplatesDialog extends StatelessWidget {
   final Function(Map<String, dynamic>) onTemplateSelected;
-
   const TemplatesDialog({super.key, required this.onTemplateSelected});
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -529,9 +670,10 @@ class TemplatesDialog extends StatelessWidget {
 /// Business card templates dialog
 class BusinessCardTemplatesDialog extends StatelessWidget {
   final Function(Map<String, dynamic>) onTemplateSelected;
-
-  const BusinessCardTemplatesDialog({super.key, required this.onTemplateSelected});
-
+  const BusinessCardTemplatesDialog({
+    super.key,
+    required this.onTemplateSelected,
+  });
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
